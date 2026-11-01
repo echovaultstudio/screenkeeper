@@ -17,16 +17,19 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 
 ## Get the APK
 
-**Option A — direct download (no tools needed)**
+**Option A — F-Droid (updates automatically)**
+In F-Droid (or Droid-ify / Neo Store): *Settings → Repositories → +*, add `https://siansa.app/fdroid/repo`, then search for Screenkeeper. New versions show up as normal updates.
+
+**Option B — direct download (no tools needed)**
 Every push to `main` builds the app and commits the result to [`dist/Screenkeeper.apk`](dist/Screenkeeper.apk). Permanent link for phones, the Shield's *Downloader* app, or `wget`:
 
 ```
 https://github.com/echovaultstudio/screenkeeper/raw/main/dist/Screenkeeper.apk
 ```
 
-The same APK is also attached to each **Actions** run as the `Screenkeeper-apk` artifact, and to a Release when you create a tag like `v1.0.0`.
+The same APK is attached to the GitHub Release of each version (the Releases page is updated by every build of `main`) and to each **Actions** run as the `Screenkeeper-apk` artifact.
 
-**Option B — Android Studio**
+**Option C — Android Studio**
 Open the folder, wait for sync, then *Build → Build App Bundle(s) / APK(s) → Build APK(s)*.
 
 **Command line** (Android SDK + JDK 17 installed): `./gradlew assembleRelease` → `app/build/outputs/apk/release/app-release.apk`
@@ -102,3 +105,7 @@ Each pairing creates a random token that is stored on both devices; the code is 
 | `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN) |
 | `RemoteClient.kt` | Phone side: HTTP client and DNS-SD discovery of TVs |
 | `RemoteActivity.kt` / `RemoteAppActivity.kt` | Phone screens: find/pair a TV, its dashboard, per-app rules over the network |
+
+## License
+
+GPL-3.0-or-later, like Siansa. See `LICENSE`.

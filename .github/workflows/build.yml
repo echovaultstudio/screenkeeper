@@ -45,10 +45,12 @@ jobs:
           echo "SK_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> "$GITHUB_ENV"
 
       - name: Build APK
+        id: build
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace assembleRelease
           cp app/build/outputs/apk/release/app-release.apk Screenkeeper.apk
+          echo "version=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
 
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
@@ -70,8 +72,37 @@ jobs:
           git diff --cached --quiet || git commit -m "Build: update dist/Screenkeeper.apk from ${GITHUB_SHA::7} [skip ci]"
           git push origin HEAD:main
 
-      - name: Attach APK to the release (tags and published releases)
-        if: startsWith(github.ref, 'refs/tags/')
+      # Every build of main becomes (or refreshes) the GitHub Release for its version, so the Releases page
+      # always has the current APK. Bump versionName in app/build.gradle.kts to start a new release.
+      - name: GitHub Release
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', steps.build.outputs.version) }}
+          name: Screenkeeper ${{ steps.build.outputs.version }}
           files: Screenkeeper.apk
+          make_latest: true
+          body: |
+            One APK for phones, tablets and Android TV (NVIDIA Shield). Install the same file on the TV and on the phone that controls it.
+
+            Permanent link: https://github.com/echovaultstudio/screenkeeper/raw/main/dist/Screenkeeper.apk
+
+      # Our own F-Droid repo (https://siansa.app/fdroid/repo). Same key and secrets as Siansa; the server only takes
+      # release-signed APKs of known packages, so this is skipped until the signing secrets exist.
+      - name: Publish to the F-Droid repo
+        if: github.ref == 'refs/heads/main' && env.KEYSTORE_BASE64 != ''
+        continue-on-error: true
+        env:
+          FDROID_HOST: ${{ secrets.FDROID_HOST }}
+          FDROID_SSH_KEY: ${{ secrets.FDROID_SSH_KEY }}
+          FDROID_KNOWN_HOSTS: ${{ secrets.FDROID_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$FDROID_HOST" ] || [ -z "$FDROID_SSH_KEY" ] || [ -z "$FDROID_KNOWN_HOSTS" ]; then
+            echo "::notice::F-Droid repo not configured (FDROID_HOST, FDROID_SSH_KEY, FDROID_KNOWN_HOSTS); skipped."
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$FDROID_SSH_KEY" > ~/.ssh/fdroid && chmod 600 ~/.ssh/fdroid
+          printf '%s\n' "$FDROID_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/fdroid -o BatchMode=yes -o StrictHostKeyChecking=yes "siansa-deploy@$FDROID_HOST" < Screenkeeper.apk
+          rm -f ~/.ssh/fdroid
