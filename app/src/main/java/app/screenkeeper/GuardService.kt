@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Handler
@@ -34,6 +35,14 @@ class GuardService : Service() {
     private var lastTick = 0L
     private var lastBlockLaunch = 0L
     private var homeRefreshedAt = 0L
+    private var screenWentOff = false
+
+    /** TV standby / phone screen off ends every unlocked session (issue #1). Runs on the main thread, like tick(). */
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_OFF) relock()
+        }
+    }
 
     private val loop = object : Runnable {
         override fun run() {
@@ -52,6 +61,16 @@ class GuardService : Service() {
         tracker = UsageTracker(this)
         watcher = ForegroundWatcher(this)
         createChannels()
+        val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenOffReceiver, filter, RECEIVER_NOT_EXPORTED)
+        else registerReceiver(screenOffReceiver, filter)
+    }
+
+    /** Forget PIN unlocks: the locked app and the settings screens ask for the PIN again. */
+    private fun relock() {
+        screenWentOff = true
+        GuardState.unlockedPkg = null
+        Admin.lock()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -63,6 +82,7 @@ class GuardService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(loop)
+        try { unregisterReceiver(screenOffReceiver) } catch (_: IllegalArgumentException) {}
         remote?.stop()
         remote = null
         super.onDestroy()
@@ -85,7 +105,8 @@ class GuardService : Service() {
 
     private fun tick() {
         val now = System.currentTimeMillis()
-        val dt = if (lastTick == 0L) 0L else (now - lastTick).coerceIn(0L, 5_000L)
+        val gap = if (lastTick == 0L) 0L else now - lastTick
+        val dt = gap.coerceIn(0L, 5_000L)
         lastTick = now
         syncRemote()
         if (!Perms.hasUsageAccess(this)) return
@@ -94,9 +115,18 @@ class GuardService : Service() {
             homeRefreshedAt = now
         }
 
-        val fg = watcher.poll(now) ?: return
-        // A PIN unlock lasts for one visit: forget it once a different app (or home) is in front.
-        if (fg != packageName && fg != GuardState.unlockedPkg) GuardState.unlockedPkg = null
+        // A PIN unlock lasts for one visit: forget it once a different app (or home) is in front, or the
+        // screen went off. Checked before the null return below, because while the TV is in standby there
+        // is no front app — returning first is what let a locked app come back unlocked (issue #1).
+        val polled = watcher.poll(now)
+        val screenOff = watcher.consumeScreenOff() || screenWentOff
+        screenWentOff = false
+        val unlocked = GuardState.unlockedPkg
+        if (unlocked != null && !Enforcer.keepUnlock(unlocked, polled, packageName, screenOff, gap)) {
+            GuardState.unlockedPkg = null
+            if (screenOff || gap >= Enforcer.SLEEP_GAP_MS) Admin.lock()
+        }
+        val fg = polled ?: return
         if (fg == packageName || fg in homePkgs) {
             lastFg = fg
             return

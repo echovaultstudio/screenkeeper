@@ -90,6 +90,11 @@ class ForegroundWatcher(ctx: Context) {
     var current: String? = null
         private set
 
+    /** Set when a screen-off or shutdown event is seen; [consumeScreenOff] reads and clears it. */
+    private var screenOff = false
+
+    fun consumeScreenOff(): Boolean = screenOff.also { screenOff = false }
+
     fun poll(now: Long): String? {
         val usm = usm ?: return null
         val begin = if (initialized) maxOf(lastEventTs, now - Time.MINUTE) - 2000 else now - 3 * Time.HOUR
@@ -114,6 +119,7 @@ class ForegroundWatcher(ctx: Context) {
                 UsageTracker.SCREEN_NON_INTERACTIVE, UsageTracker.DEVICE_SHUTDOWN -> {
                     current = null
                     currentClass = null
+                    screenOff = true
                 }
             }
         }
