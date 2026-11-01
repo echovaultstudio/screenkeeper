@@ -74,6 +74,14 @@ Then open the app again; the rows show as allowed.
 
 Download the new APK and run `adb install -r Screenkeeper.apk` again. Rules and the PIN are kept.
 
+## Uninstalling
+
+```
+adb uninstall app.screenkeeper
+```
+
+This removes the rules and the PIN too. Without adb: on a phone long-press the icon → *App info* → *Uninstall*; on the Shield *Settings → Apps → See all apps → Screenkeeper → Uninstall*.
+
 ## Problems
 
 | Message | Meaning |
