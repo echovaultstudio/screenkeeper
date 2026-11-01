@@ -1,8 +1,10 @@
 package app.screenkeeper
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EnforcerTest {
@@ -72,6 +74,26 @@ class EnforcerTest {
         clock += 6 * Time.MINUTE // away longer than a break
         t.tick(pkg, r, clock, 1000)
         assertEquals(1000L, t.streakMs(pkg))
+    }
+
+    @Test fun pinUnlockLastsForOneVisit() {
+        val self = "app.screenkeeper"
+        fun keep(fg: String?, off: Boolean = false, gap: Long = 1000) = Enforcer.keepUnlock(pkg, fg, self, off, gap)
+        assertTrue(keep(pkg))                       // still watching
+        assertTrue(keep(self))                      // our own block/PIN screen in front
+        assertTrue(keep(null))                      // between two activities of the app
+        assertFalse(keep("com.other.app"))          // switched apps
+        assertFalse(Enforcer.keepUnlock(null, pkg, self, false, 1000))
+    }
+
+    @Test fun screenOffOrStandbyRelocksEvenIfSameAppComesBack() {
+        val self = "app.screenkeeper"
+        // Issue #1: TV switched off with the unlocked app open, then on again — the same app resumes.
+        assertFalse(Enforcer.keepUnlock(pkg, null, self, screenWentOff = true, tickGapMs = 1000))
+        assertFalse(Enforcer.keepUnlock(pkg, pkg, self, screenWentOff = true, tickGapMs = 1000))
+        // Screen-off event missed, but the tick loop was paused by standby.
+        assertFalse(Enforcer.keepUnlock(pkg, pkg, self, screenWentOff = false, tickGapMs = Enforcer.SLEEP_GAP_MS))
+        assertTrue(Enforcer.keepUnlock(pkg, pkg, self, screenWentOff = false, tickGapMs = 5_000))
     }
 
     @Test fun formatting() {

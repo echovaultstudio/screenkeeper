@@ -31,6 +31,23 @@ object Enforcer {
         if (rule.pinLocked && !sessionUnlocked) return BlockReason.PIN_LOCKED
         return null
     }
+
+    /** A gap this long between guard ticks means the device slept (the tick loop pauses in standby). */
+    const val SLEEP_GAP_MS = 30_000L
+
+    /**
+     * Does a PIN unlock for [unlockedPkg] survive this tick? An unlock lasts for one visit, and a visit
+     * ends when another app comes to the front or when the screen goes off — otherwise an app left open
+     * when the TV is switched off would come back unlocked (issue #1).
+     *
+     * [fg] is null while nothing is known to be in front (screen off, or between two activities);
+     * that alone doesn't end the visit, only [screenWentOff] or a sleep-sized [tickGapMs] does.
+     */
+    fun keepUnlock(unlockedPkg: String?, fg: String?, selfPkg: String, screenWentOff: Boolean, tickGapMs: Long): Boolean {
+        if (unlockedPkg == null) return false
+        if (screenWentOff || tickGapMs >= SLEEP_GAP_MS) return false
+        return fg == null || fg == selfPkg || fg == unlockedPkg
+    }
 }
 
 /**
