@@ -48,10 +48,12 @@ Add repository secrets (Settings → Secrets and variables → Actions): `KEYSTO
 
 1. Download `Screenkeeper.apk` on the phone and open it. Allow "Install unknown apps" for your browser/file manager when asked.
 2. Open Screenkeeper and tap each permission row: **Usage access** and **Display over other apps** (required), plus notifications and battery optimization (recommended).
-   On Android 13+ the Usage access toggle is greyed out ("Controlled by restricted setting") for apps installed from a browser or file manager: open **App info → ⋮ → Allow restricted settings** once, then tap the row again. Installing with `adb install` avoids this.
+   On Android 13+ the Usage access toggle is greyed out ("Controlled by restricted setting") for apps installed from a browser or file manager: open **App info → ⋮ → Allow restricted settings** once, then tap the row again. Installing with `adb install` avoids this — see [docs/adb.md](docs/adb.md).
 3. Samsung/Xiaomi/OnePlus etc.: also set Screenkeeper's battery usage to *Unrestricted* in App info, or the system may stop it.
 
 ## Install on NVIDIA Shield TV
+
+The short version is below; [docs/adb.md](docs/adb.md) has the full adb guide (installing adb on macOS/Windows/Linux, pairing phones over Wi-Fi or USB, updating, error messages).
 
 1. On the Shield: **Settings → Device Preferences → About → Build**, press OK 7 times to unlock Developer options.
 2. **Settings → Device Preferences → Developer options → Network debugging: On**. Note the IP address shown.
