@@ -25,6 +25,7 @@ class GuardService : Service() {
     private lateinit var tracker: UsageTracker
     private lateinit var watcher: ForegroundWatcher
     private val breaks = BreakTracker()
+    private var remote: RemoteServer? = null
     private var homePkgs: Set<String> = emptySet()
 
     private var today: UsageTracker.Snapshot? = null
@@ -62,7 +63,22 @@ class GuardService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(loop)
+        remote?.stop()
+        remote = null
         super.onDestroy()
+    }
+
+    /** The remote-control server follows the setting; checked every tick so the settings screen needs no plumbing. */
+    private fun syncRemote() {
+        val wanted = store.remoteEnabled()
+        val r = remote
+        if (wanted && (r == null || !r.running)) {
+            val server = r ?: RemoteServer(this, store).also { remote = it }
+            server.start()
+        } else if (!wanted && r != null) {
+            r.stop()
+            remote = null
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -71,6 +87,7 @@ class GuardService : Service() {
         val now = System.currentTimeMillis()
         val dt = if (lastTick == 0L) 0L else (now - lastTick).coerceIn(0L, 5_000L)
         lastTick = now
+        syncRemote()
         if (!Perms.hasUsageAccess(this)) return
         if (now - homeRefreshedAt > 10 * Time.MINUTE) {
             homePkgs = Apps.homePackages(this) + "com.android.systemui"

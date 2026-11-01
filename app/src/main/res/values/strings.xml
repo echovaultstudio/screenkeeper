@@ -86,4 +86,39 @@
     <string name="block_break_d">Stretch, grab some water, rest your eyes. Back in:</string>
     <string name="block_pin">PIN required</string>
     <string name="block_pin_d">Enter the PIN to open this app.</string>
+
+    <!-- Phone remote -->
+    <string name="remote_heading">Phone remote</string>
+    <string name="remote_control_tv">Control a TV from this device</string>
+    <string name="remote_allow">Allow control from a phone</string>
+    <string name="remote_hint_tv">Turn this on to set limits and PINs on this TV from the Screenkeeper app on your phone. The TV and the phone must be on the same Wi-Fi.</string>
+    <string name="remote_hint_phone">Set limits on your NVIDIA Shield or other Android TV from here. Install Screenkeeper on the TV and turn on \"Allow control from a phone\" there.</string>
+    <string name="remote_pair_code">Pairing code</string>
+    <string name="remote_pair_how">On your phone, open Screenkeeper → Control a TV and enter this code. Address if the TV isn\'t found automatically: %1$s</string>
+    <string name="remote_paired">Paired: %1$s</string>
+    <string name="remote_new_code">New code</string>
+    <string name="remote_unpair_all">Unpair all phones</string>
+    <string name="remote_title">Control a TV</string>
+    <string name="remote_intro">The TV needs Screenkeeper installed with \"Allow control from a phone\" turned on. Both devices must be on the same network.</string>
+    <string name="remote_searching">Searching for TVs on your network…</string>
+    <string name="remote_enter_ip">Enter IP address…</string>
+    <string name="remote_ip_help">Shown on the TV under Phone remote (also in the TV\'s network settings).</string>
+    <string name="remote_connecting">Connecting…</string>
+    <string name="remote_not_found">No Screenkeeper found</string>
+    <string name="remote_not_found_d">Nothing answered at %1$s. Check that the TV is on, Screenkeeper is open or running, and \"Allow control from a phone\" is on.</string>
+    <string name="remote_pair_title">Pair with %1$s</string>
+    <string name="remote_pair_help">Enter the 6-digit code shown on the TV under Phone remote.</string>
+    <string name="remote_wrong_code">Wrong code</string>
+    <string name="remote_wrong_code_d">The code didn\'t match. Read it from the TV screen and try again. After 5 wrong tries the TV waits a minute.</string>
+    <string name="remote_error">Couldn\'t talk to the TV</string>
+    <string name="remote_unpaired">The TV no longer knows this phone. Pair again.</string>
+    <string name="remote_unreachable">Can\'t reach the TV at %1$s.</string>
+    <string name="remote_unreachable_help">Is the TV on and on the same Wi-Fi? Screenkeeper must be running on it with \"Allow control from a phone\" turned on.</string>
+    <string name="remote_forget">Forget this TV</string>
+    <string name="remote_locked_d">Settings on %1$s are locked again.</string>
+    <string name="remote_apps_hint">Select an app to set its limits on %1$s.</string>
+    <string name="remote_on_tv">on %1$s</string>
+    <string name="remote_extra_time">Give 15 extra minutes</string>
+    <string name="remote_extra_time_d">%1$s can be used for 15 more minutes, whatever the rules say.</string>
+    <string name="remote_open_on_tv">Open on %1$s</string>
 </resources>

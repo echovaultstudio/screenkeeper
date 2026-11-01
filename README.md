@@ -12,7 +12,8 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 - 4-digit PIN: protect settings, lock individual apps, or grant 15 extra minutes from the block screen
 - Wrong-PIN lockout (5 tries, then 30 s)
 - Works with touch, D-pad, and remote number keys; shows on the Android TV home row
-- Restarts after reboot; no internet permission, nothing leaves the device
+- **Phone remote**: pair your phone with the Shield once (6-digit code on the TV) and set limits, block apps, set or change the PIN and lock the TV's settings from the phone
+- Restarts after reboot; nothing leaves your home network (the remote feature talks TV ↔ phone over local Wi-Fi only; there is no cloud)
 
 ## Get the APK
 
@@ -20,7 +21,7 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 Every push to `main` builds the app and commits the result to [`dist/Screenkeeper.apk`](dist/Screenkeeper.apk). Permanent link for phones, the Shield's *Downloader* app, or `wget`:
 
 ```
-https://github.com/echovaultstudio/tvlocker/raw/main/dist/Screenkeeper.apk
+https://github.com/echovaultstudio/screenkeeper/raw/main/dist/Screenkeeper.apk
 ```
 
 The same APK is also attached to each **Actions** run as the `Screenkeeper-apk` artifact, and to a Release when you create a tag like `v1.0.0`.
@@ -64,6 +65,15 @@ Add repository secrets (Settings → Secrets and variables → Actions): `KEYSTO
    adb shell dumpsys deviceidle whitelist +app.screenkeeper
    ```
 
+## Control the Shield from your phone
+
+1. Install the same APK on both the Shield and the phone.
+2. On the Shield: open Screenkeeper → **Phone remote** → **Allow control from a phone: On**. A 6-digit pairing code and the TV's IP address appear.
+3. On the phone: open Screenkeeper → **Control a TV from this device**. The Shield shows up by itself (DNS-SD); if not, use **Enter IP address…**. Enter the code.
+4. The phone now shows the TV's usage and app list. Select an app to set its daily limit, allowed hours, breaks, blocks or PIN lock, give 15 extra minutes, or open it on the TV. The top buttons set, change or remove the TV's PIN and re-lock its settings.
+
+Each pairing creates a random token that is stored on both devices; the code is rotated after every successful pairing and the TV waits a minute after 5 wrong codes. **Unpair all phones** on the TV revokes everything. Both devices have to be on the same network (port 47317, plain HTTP on your LAN).
+
 ## Using it
 
 - Main screen: today's total, 7-day chart, apps sorted by use. Select an app to set rules; long-press to open it.
@@ -88,3 +98,7 @@ Add repository secrets (Settings → Secrets and variables → Actions): `KEYSTO
 | `AppDetailActivity.kt` | Per-app stats and rule editor |
 | `BlockActivity.kt` | Block screen with break countdown and PIN unlock |
 | `Ui.kt` | D-pad-friendly widgets, PIN pad, bar chart |
+| `RuleEditor.kt` | The rules section, shared by the local and remote app pages |
+| `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN) |
+| `RemoteClient.kt` | Phone side: HTTP client and DNS-SD discovery of TVs |
+| `RemoteActivity.kt` / `RemoteAppActivity.kt` | Phone screens: find/pair a TV, its dashboard, per-app rules over the network |

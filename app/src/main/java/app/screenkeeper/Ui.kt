@@ -139,13 +139,30 @@ fun Activity.pickFrom(title: String, items: List<String>, onPick: (Int) -> Unit)
         .show()
 }
 
-fun Activity.info(title: String, message: String) {
+/** One-line text input dialog. [numeric] shows a number keyboard. */
+fun Activity.prompt(title: String, message: String?, hint: String, numeric: Boolean, onText: (String) -> Unit) {
+    val input = android.widget.EditText(this).apply {
+        this.hint = hint
+        isSingleLine = true
+        inputType = if (numeric) android.text.InputType.TYPE_CLASS_NUMBER else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
+    }
+    val wrap = vbox(20).apply { addView(input, lp()) }
+    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        .setTitle(title)
+        .setMessage(message)
+        .setView(wrap)
+        .setPositiveButton(android.R.string.ok) { _, _ -> onText(input.text.toString().trim()) }
+        .setNegativeButton(android.R.string.cancel, null)
+        .show()
+    input.requestFocus()
+}
+
+fun Activity.info(title: String, message: String): AlertDialog =
     AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
         .setTitle(title)
         .setMessage(message)
         .setPositiveButton(android.R.string.ok, null)
         .show()
-}
 
 /**
  * A 4-digit PIN pad that works with touch, the D-pad, and the number keys on a TV remote.
@@ -245,15 +262,19 @@ class PinPad(
             }
         }
 
-        /** Choose and confirm a new PIN. */
+        /** Choose and confirm a new PIN, then store it locally. */
         fun create(activity: Activity, store: RuleStore, onDone: () -> Unit) {
+            choose(activity) { pin -> store.setPin(pin); onDone() }
+        }
+
+        /** Choose and confirm a new PIN; [onChosen] decides where it goes (local store or a TV). */
+        fun choose(activity: Activity, onChosen: (String) -> Unit) {
             PinPad(activity, activity.getString(R.string.pin_choose)) { first, pad ->
                 pad.dismiss()
                 PinPad(activity, activity.getString(R.string.pin_confirm)) { second, pad2 ->
                     if (first == second) {
-                        store.setPin(first)
                         pad2.dismiss()
-                        onDone()
+                        onChosen(first)
                     } else {
                         pad2.error(activity.getString(R.string.pin_mismatch))
                     }

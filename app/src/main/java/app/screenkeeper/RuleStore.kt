@@ -34,30 +34,10 @@ class RuleStore(ctx: Context) {
         return out
     }
 
-    private fun toJson(r: AppRule): String = JSONObject()
-        .put("limit", r.dailyLimitMin)
-        .put("blocked", r.blocked)
-        .put("unlimited", r.unlimited)
-        .put("pin", r.pinLocked)
-        .put("from", r.allowedFromMin)
-        .put("to", r.allowedToMin)
-        .put("breakEvery", r.breakEveryMin)
-        .put("breakFor", r.breakForMin)
-        .toString()
+    private fun toJson(r: AppRule): String = ruleToJson(r).toString()
 
     private fun parse(pkg: String, s: String): AppRule? = try {
-        val j = JSONObject(s)
-        AppRule(
-            pkg = pkg,
-            dailyLimitMin = j.optInt("limit", 0),
-            blocked = j.optBoolean("blocked", false),
-            unlimited = j.optBoolean("unlimited", false),
-            pinLocked = j.optBoolean("pin", false),
-            allowedFromMin = j.optInt("from", -1),
-            allowedToMin = j.optInt("to", -1),
-            breakEveryMin = j.optInt("breakEvery", 0),
-            breakForMin = j.optInt("breakFor", 0),
-        )
+        ruleFromJson(pkg, JSONObject(s))
     } catch (_: Exception) {
         null
     }
@@ -118,6 +98,61 @@ class RuleStore(ctx: Context) {
     fun warnedDay(pkg: String): Long = prefs.getLong(WARNED + pkg, 0)
     fun setWarnedDay(pkg: String, day: Long) = prefs.edit().putLong(WARNED + pkg, day).apply()
 
+    // ---- Remote control (this device is controlled by a phone) ----
+
+    fun remoteEnabled(): Boolean = prefs.getBoolean(REMOTE_ON, false)
+    fun setRemoteEnabled(on: Boolean) = prefs.edit().putBoolean(REMOTE_ON, on).apply()
+
+    /** Six-digit code shown on this device; a phone sends it once to pair. */
+    fun pairingCode(): String = prefs.getString(PAIR_CODE, null) ?: Remote.newCode().also {
+        prefs.edit().putString(PAIR_CODE, it).apply()
+    }
+
+    fun newPairingCode() = prefs.edit().putString(PAIR_CODE, Remote.newCode()).apply()
+
+    /** Paired phones: token -> name. */
+    fun pairedDevices(): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        try {
+            val j = JSONObject(prefs.getString(TOKENS, "{}") ?: "{}")
+            for (k in j.keys()) out[k] = j.optString(k)
+        } catch (_: Exception) {
+        }
+        return out
+    }
+
+    fun addToken(token: String, name: String) {
+        val j = JSONObject(pairedDevices() as Map<*, *>).put(token, name)
+        prefs.edit().putString(TOKENS, j.toString()).apply()
+    }
+
+    fun removeToken(token: String) {
+        val m = LinkedHashMap(pairedDevices())
+        m.remove(token)
+        prefs.edit().putString(TOKENS, JSONObject(m as Map<*, *>).toString()).apply()
+    }
+
+    fun clearTokens() = prefs.edit().remove(TOKENS).apply()
+
+    fun isValidToken(token: String): Boolean = token.length >= 32 && pairedDevices().containsKey(token)
+
+    fun touchToken(token: String) = prefs.edit().putLong(TOKEN_SEEN + token, System.currentTimeMillis()).apply()
+
+    // ---- Remote control (this device is the phone) ----
+
+    class SavedRemote(val host: String, val token: String, val name: String)
+
+    fun savedRemote(): SavedRemote? {
+        val host = prefs.getString(REMOTE_HOST, null) ?: return null
+        val token = prefs.getString(REMOTE_TOKEN, null) ?: return null
+        return SavedRemote(host, token, prefs.getString(REMOTE_NAME, "TV") ?: "TV")
+    }
+
+    fun setSavedRemote(host: String, token: String, name: String) =
+        prefs.edit().putString(REMOTE_HOST, host).putString(REMOTE_TOKEN, token).putString(REMOTE_NAME, name).apply()
+
+    fun clearSavedRemote() = prefs.edit().remove(REMOTE_HOST).remove(REMOTE_TOKEN).remove(REMOTE_NAME).apply()
+
     private fun hash(salt: String, pin: String): String =
         MessageDigest.getInstance("SHA-256").digest((salt + ":" + pin).toByteArray()).toHex()
 
@@ -132,6 +167,13 @@ class RuleStore(ctx: Context) {
         private const val PIN_SALT = "pin_salt"
         private const val PIN_FAILS = "pin_fails"
         private const val PIN_LOCK_UNTIL = "pin_lock_until"
+        private const val REMOTE_ON = "remote_on"
+        private const val PAIR_CODE = "pair_code"
+        private const val TOKENS = "remote_tokens"
+        private const val TOKEN_SEEN = "token_seen:"
+        private const val REMOTE_HOST = "remote_host"
+        private const val REMOTE_TOKEN = "remote_token"
+        private const val REMOTE_NAME = "remote_name"
         private const val MAX_FAILS = 5
         const val LOCKOUT_MS = 30_000L
     }
@@ -154,3 +196,30 @@ object Admin {
     fun touch() { if (isUnlocked()) unlock() }
     fun lock() { unlockedUntil = 0L }
 }
+
+/** Rule <-> JSON, shared by local storage and the remote-control protocol. */
+fun ruleToJson(r: AppRule): JSONObject = JSONObject()
+    .put("limit", r.dailyLimitMin)
+    .put("blocked", r.blocked)
+    .put("unlimited", r.unlimited)
+    .put("pin", r.pinLocked)
+    .put("from", r.allowedFromMin)
+    .put("to", r.allowedToMin)
+    .put("breakEvery", r.breakEveryMin)
+    .put("breakFor", r.breakForMin)
+
+fun ruleFromJson(pkg: String, j: JSONObject): AppRule = AppRule(
+    pkg = pkg,
+    dailyLimitMin = j.optInt("limit", 0),
+    blocked = j.optBoolean("blocked", false),
+    unlimited = j.optBoolean("unlimited", false),
+    pinLocked = j.optBoolean("pin", false),
+    allowedFromMin = j.optInt("from", -1),
+    allowedToMin = j.optInt("to", -1),
+    breakEveryMin = j.optInt("breakEvery", 0),
+    breakForMin = j.optInt("breakFor", 0),
+)
+
+/** Any time rule cancels "unlimited", since the two contradict each other. */
+fun sanitizeRule(rule: AppRule): AppRule =
+    if (rule.unlimited && (rule.dailyLimitMin > 0 || rule.hasWindow || rule.hasBreaks)) rule.copy(unlimited = false) else rule

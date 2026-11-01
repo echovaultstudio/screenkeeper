@@ -175,6 +175,8 @@ class MainActivity : Activity() {
         actions += button(getString(R.string.refresh)) { render() }
         page.addView(buttonRow(*actions.toTypedArray()), lp(top = dp(14)))
 
+        addRemoteSection(page)
+
         page.addView(text(getString(R.string.apps_heading), 20f, bold = true), lp(top = dp(22)))
         page.addView(text(getString(R.string.apps_hint), 13f, Palette.MUTED), lp(top = dp(2), bottom = dp(10)))
 
@@ -193,6 +195,51 @@ class MainActivity : Activity() {
         }
         // On TV, start with the most-used app selected; return to the last opened app when coming back.
         (toFocus ?: if (isTv()) firstRow else null)?.requestFocus()
+    }
+
+    // ---------- Phone remote ----------
+
+    /** On a TV: let a phone control this device. On a phone: open the TV controller. Both are offered everywhere. */
+    private fun addRemoteSection(page: LinearLayout) {
+        page.addView(text(getString(R.string.remote_heading), 20f, bold = true), lp(top = dp(22), bottom = dp(8)))
+        val tv = isTv()
+        val controlOthers = button(getString(R.string.remote_control_tv)) {
+            startActivity(Intent(this, RemoteActivity::class.java))
+        }
+        val enabled = store.remoteEnabled()
+        val allow = button(getString(R.string.remote_allow) + ":  " + getString(if (enabled) R.string.on else R.string.off)) {
+            store.setRemoteEnabled(!enabled)
+            if (!enabled) store.newPairingCode()
+            render()
+        }
+        if (tv) {
+            page.addView(allow, lp(bottom = dp(8)))
+        } else {
+            page.addView(controlOthers, lp(bottom = dp(8)))
+        }
+        if (enabled) {
+            val ip = Remote.localIp() ?: "?"
+            val code = store.pairingCode()
+            val card = vbox().apply {
+                background = focusBg(radiusDp = 14f)
+                setPadding(dp(16), dp(14), dp(16), dp(14))
+            }
+            card.addView(text(getString(R.string.remote_pair_code), 14f, Palette.MUTED))
+            card.addView(text(code.substring(0, 3) + " " + code.substring(3), 34f, Palette.ACCENT, bold = true).apply { letterSpacing = 0.15f })
+            card.addView(text(getString(R.string.remote_pair_how, ip), 14f, Palette.MUTED), lp(top = dp(6)))
+            val paired = store.pairedDevices()
+            if (paired.isNotEmpty()) {
+                card.addView(text(getString(R.string.remote_paired, paired.values.joinToString(", ")), 14f, Palette.TEXT), lp(top = dp(10)))
+            }
+            page.addView(card, lp(bottom = dp(8)))
+            val extra = mutableListOf<View>(button(getString(R.string.remote_new_code)) { store.newPairingCode(); render() })
+            if (paired.isNotEmpty()) extra += button(getString(R.string.remote_unpair_all)) { store.clearTokens(); render() }
+            extra += if (tv) controlOthers else allow
+            page.addView(buttonRow(*extra.toTypedArray()), lp(bottom = dp(4)))
+        } else {
+            page.addView(if (tv) controlOthers else allow, lp(WRAP, WRAP, bottom = dp(4)))
+            page.addView(text(getString(if (tv) R.string.remote_hint_tv else R.string.remote_hint_phone), 13f, Palette.MUTED))
+        }
     }
 
     private fun appRow(app: AppInfo, todayMs: Long, weekMs: Long, rule: AppRule?): View {
