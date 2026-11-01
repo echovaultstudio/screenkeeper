@@ -13,6 +13,8 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 - Wrong-PIN lockout (5 tries, then 30 s)
 - Works with touch, D-pad, and remote number keys; shows on the Android TV home row
 - **Phone remote**: pair your phone with the Shield once (6-digit code on the TV) and set limits, block apps, set or change the PIN and lock the TV's settings from the phone
+- **Phone keyboard**: type into search boxes and logins on the TV from your phone's keyboard
+- **Update the TV from your phone**: installs Screenkeeper (or any APK) on the Shield over Network debugging — no computer
 - Restarts after reboot; nothing leaves your home network (the remote feature talks TV ↔ phone over local Wi-Fi only; there is no cloud)
 
 ## Get the APK
@@ -80,6 +82,22 @@ The short version is below; [docs/adb.md](docs/adb.md) has the full adb guide (i
 
 Each pairing creates a random token that is stored on both devices; the code is rotated after every successful pairing and the TV waits a minute after 5 wrong codes. **Unpair all phones** on the TV revokes everything. Both devices have to be on the same network (port 47317, plain HTTP on your LAN).
 
+### Type on the TV from the phone
+
+1. On the TV: Screenkeeper → **Phone remote** → **Phone keyboard** opens the accessibility settings; turn on **Screenkeeper phone keyboard** (on a Shield: *Settings → Device Preferences → Accessibility*). Or use **Grant permissions on TV** from the phone (below), which does it over adb.
+2. On the TV, select a search box or text field. On the phone: TV dashboard → **Keyboard** and type. Text appears on the TV as you type (backspace, autocorrect, paste and voice typing work); **Enter / Search** presses the TV keyboard's action key.
+
+It works with regular Android text fields (Play Store, browsers, most login screens, Kodi, Plex…). Apps that draw their own letter grid instead of a real text field can't be typed into this way. The service only acts when a paired phone sends text.
+
+### Update the TV from the phone (adb, no computer)
+
+1. On the TV, once: *Settings → Device Preferences → About → Build* ×7, then *Developer options → Network debugging: On*. Note the IP.
+2. On the phone: **Control a TV** → **Update TV over ADB**. The paired TV's address is filled in (port 5555).
+3. **Install this phone's Screenkeeper on the TV** sends the version installed on the phone — update the phone first, then press it. **Pick an APK…** installs any file. The first time, the TV asks *Allow network debugging?* — tick *Always allow* and choose OK.
+4. **Grant permissions on TV** runs the usage-access, overlay and battery grants and turns on the phone keyboard (keeping any other accessibility services you use).
+
+Updates keep the TV's rules and PIN as long as both APKs come from the same signing key (see *Keep updates installable*). The phone's adb key is stored in the app; revoke it on the TV under *Developer options → Revoke USB debugging authorizations*.
+
 ## Using it
 
 - Main screen: today's total, 7-day chart, apps sorted by use. Select an app to set rules; long-press to open it.
@@ -108,6 +126,10 @@ Each pairing creates a random token that is stored on both devices; the code is 
 | `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN) |
 | `RemoteClient.kt` | Phone side: HTTP client and DNS-SD discovery of TVs |
 | `RemoteActivity.kt` / `RemoteAppActivity.kt` | Phone screens: find/pair a TV, its dashboard, per-app rules over the network |
+| `KeyboardService.kt` | TV: accessibility service that sets the focused text field's text for the phone keyboard |
+| `RemoteKeyboardActivity.kt` | Phone: the keyboard screen, mirrors what you type to the TV |
+| `AdbClient.kt` | Minimal adb-over-TCP client (RSA auth, streamed `pm install`, shell) |
+| `AdbUpdateActivity.kt` | Phone: install/update an APK and grant permissions on the TV over adb |
 
 ## License
 

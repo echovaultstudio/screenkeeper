@@ -93,7 +93,10 @@ class RemoteActivity : Activity() {
                 if (host.isNotEmpty()) connect(host, host)
             }
         }
-        page.addView(manual, lp(WRAP, WRAP, top = dp(8)))
+        val adb = button(getString(R.string.adb_update_open)) {
+            startActivity(Intent(this, AdbUpdateActivity::class.java))
+        }
+        page.addView(buttonRow(manual, adb), lp(top = dp(8)))
         manual.requestFocus()
 
         val d = RemoteDiscovery(this) { name, host ->
@@ -191,6 +194,9 @@ class RemoteActivity : Activity() {
         }
 
         val actions = mutableListOf<View>()
+        actions += button(getString(R.string.keyboard_open)) {
+            startActivity(Intent(this, RemoteKeyboardActivity::class.java))
+        }
         actions += button(getString(if (hasPin) R.string.change_pin else R.string.set_pin)) {
             val setIt = { current: String? ->
                 PinPad.choose(this) { pin ->
@@ -210,6 +216,9 @@ class RemoteActivity : Activity() {
             actions += button(getString(R.string.lock_now)) {
                 io(bg, { client.post("/lock") }, ::showError) { info(getString(R.string.lock_now), getString(R.string.remote_locked_d, saved.name)) }
             }
+        }
+        actions += button(getString(R.string.adb_update_open)) {
+            startActivity(Intent(this, AdbUpdateActivity::class.java))
         }
         actions += button(getString(R.string.refresh)) { render() }
         actions += button(getString(R.string.remote_forget)) {

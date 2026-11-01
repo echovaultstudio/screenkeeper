@@ -41,6 +41,10 @@ import java.util.concurrent.Executors
  *   POST /override/{pkg}       {minutes}
  *   POST /launch/{pkg}
  *   POST /unpair
+ *   GET  /keyboard                           {enabled, field:{text, hint, password, app}|null}
+ *   POST /keyboard/text        {text}        {field}   replaces the focused field's text on the TV
+ *   POST /keyboard/enter                     {field}   presses the keyboard's Enter/Search key
+ *        (keyboard errors: 409 "keyboard off" | "no text field", 422 "not accepted", 501 "needs Android 11")
  */
 object Remote {
     const val PORT = 47317
@@ -266,6 +270,9 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
             r.method == "POST" && head == "override" && seg.size == 2 -> override(seg[1], json(r.body))
             r.method == "POST" && head == "launch" && seg.size == 2 -> ok().put("launched", Apps.launch(ctx, seg[1]))
             r.method == "POST" && head == "unpair" -> { store.removeToken(token); ok() }
+            r.method == "GET" && head == "keyboard" && seg.size == 1 -> keyboardState()
+            r.method == "POST" && head == "keyboard" && seg.getOrNull(1) == "text" -> keyboardText(json(r.body))
+            r.method == "POST" && head == "keyboard" && seg.getOrNull(1) == "enter" -> keyboardResult(keyboard().enter())
             else -> throw HttpError(404, "no such endpoint")
         }
     }
@@ -390,7 +397,42 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
         return ok()
     }
 
+    // ---- Phone keyboard ----
+
+    private fun keyboard(): KeyboardService =
+        KeyboardService.instance ?: throw HttpError(409, KB_OFF)
+
+    private fun keyboardState(): JSONObject {
+        val kb = KeyboardService.instance ?: return JSONObject().put("enabled", false).put("field", JSONObject.NULL)
+        val out = kb.current()
+        return JSONObject().put("enabled", true)
+            .put("field", if (out is KeyboardService.Outcome.Ok) fieldJson(out.field) else JSONObject.NULL)
+    }
+
+    private fun keyboardText(body: JSONObject): JSONObject {
+        if (!body.has("text")) throw HttpError(400, "text missing")
+        val text = body.optString("text").take(KeyboardService.MAX_TEXT)
+        return keyboardResult(keyboard().setText(text))
+    }
+
+    private fun keyboardResult(o: KeyboardService.Outcome): JSONObject = when (o) {
+        is KeyboardService.Outcome.Ok -> ok().put("field", fieldJson(o.field))
+        KeyboardService.Outcome.NoField -> throw HttpError(409, KB_NO_FIELD)
+        KeyboardService.Outcome.Failed -> throw HttpError(422, KB_FAILED)
+        KeyboardService.Outcome.Unsupported -> throw HttpError(501, KB_UNSUPPORTED)
+    }
+
+    private fun fieldJson(f: KeyboardService.Field) = JSONObject()
+        .put("text", f.text)
+        .put("hint", f.hint)
+        .put("password", f.password)
+        .put("app", f.app)
+
     companion object {
         private const val TAG = "Screenkeeper"
+        const val KB_OFF = "keyboard off"
+        const val KB_NO_FIELD = "no text field"
+        const val KB_FAILED = "not accepted"
+        const val KB_UNSUPPORTED = "needs Android 11"
     }
 }

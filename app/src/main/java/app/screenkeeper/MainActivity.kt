@@ -240,10 +240,27 @@ class MainActivity : Activity() {
             if (paired.isNotEmpty()) extra += button(getString(R.string.remote_unpair_all)) { store.clearTokens(); render() }
             extra += if (tv) controlOthers else allow
             page.addView(buttonRow(*extra.toTypedArray()), lp(bottom = dp(4)))
+            if (tv) addKeyboardRow(page)
         } else {
             page.addView(if (tv) controlOthers else allow, lp(WRAP, WRAP, bottom = dp(4)))
             page.addView(text(getString(if (tv) R.string.remote_hint_tv else R.string.remote_hint_phone), 13f, Palette.MUTED))
         }
+    }
+
+    /** TV: the accessibility service that lets a paired phone type into this TV's text fields. */
+    private fun addKeyboardRow(page: LinearLayout) {
+        val on = KeyboardService.isEnabled(this)
+        page.addView(button(getString(R.string.keyboard_tv_row) + ":  " + getString(if (on) R.string.on else R.string.off)) {
+            if (!KeyboardService.openSettings(this)) showKeyboardAdb()
+        }, lp(WRAP, WRAP, top = dp(8), bottom = dp(4)))
+        if (!on) {
+            page.addView(text(getString(R.string.keyboard_tv_hint), 13f, Palette.MUTED))
+            page.addView(button(getString(R.string.keyboard_tv_adb)) { showKeyboardAdb() }, lp(WRAP, WRAP, top = dp(6)))
+        }
+    }
+
+    private fun showKeyboardAdb() {
+        info(getString(R.string.adb_title), getString(R.string.keyboard_tv_adb_body) + "\n\n" + KeyboardService.adbCommands(packageName))
     }
 
     private fun appRow(app: AppInfo, todayMs: Long, weekMs: Long, rule: AppRule?): View {

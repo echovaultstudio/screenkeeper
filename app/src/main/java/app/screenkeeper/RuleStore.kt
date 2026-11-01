@@ -153,6 +153,10 @@ class RuleStore(ctx: Context) {
 
     fun clearSavedRemote() = prefs.edit().remove(REMOTE_HOST).remove(REMOTE_TOKEN).remove(REMOTE_NAME).apply()
 
+    /** Last address used for "Update TV over ADB" (host or host:port). */
+    fun adbAddress(): String? = prefs.getString(ADB_ADDRESS, null)
+    fun setAdbAddress(a: String) = prefs.edit().putString(ADB_ADDRESS, a).apply()
+
     private fun hash(salt: String, pin: String): String =
         MessageDigest.getInstance("SHA-256").digest((salt + ":" + pin).toByteArray()).toHex()
 
@@ -174,6 +178,7 @@ class RuleStore(ctx: Context) {
         private const val REMOTE_HOST = "remote_host"
         private const val REMOTE_TOKEN = "remote_token"
         private const val REMOTE_NAME = "remote_name"
+        private const val ADB_ADDRESS = "adb_address"
         private const val MAX_FAILS = 5
         const val LOCKOUT_MS = 30_000L
     }
