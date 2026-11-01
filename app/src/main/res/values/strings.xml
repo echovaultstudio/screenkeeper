@@ -35,6 +35,8 @@
     <string name="perm_notif_desc">Optional. Warns you 5 minutes before a limit.</string>
     <string name="perm_battery">Ignore battery optimization</string>
     <string name="perm_battery_desc">Recommended on phones, so limits keep working in the background.</string>
+    <string name="restricted_hint">Toggle greyed out, \"Controlled by restricted setting\"? Android locks this for apps installed from a browser or file manager. Open App info, tap the ⋮ menu in the top corner → Allow restricted settings, then come back here.</string>
+    <string name="restricted_button">Open App info</string>
     <string name="adb_button">Settings screen missing? Show ADB commands</string>
     <string name="adb_title">Grant with ADB</string>
     <string name="adb_body">Some TVs hide these settings. Enable Developer options and network debugging on the device, then run these from a computer (after adb connect &lt;device-ip&gt;):</string>

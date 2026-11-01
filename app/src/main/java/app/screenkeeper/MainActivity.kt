@@ -64,6 +64,10 @@ class MainActivity : Activity() {
             if (!Perms.openBattery(this)) showAdbHelp()
         })
 
+        if (Build.VERSION.SDK_INT >= 33 && !isTv() && !Perms.hasUsageAccess(this)) {
+            page.addView(text(getString(R.string.restricted_hint), 14f, Palette.MUTED), lp(top = dp(16)))
+            page.addView(button(getString(R.string.restricted_button)) { Apps.openAppInfo(this, packageName) }, lp(WRAP, WRAP, top = dp(8)))
+        }
         page.addView(button(getString(R.string.adb_button)) { showAdbHelp() }, lp(WRAP, WRAP, top = dp(16)))
         page.post { page.findFocus() ?: page.getChildAt(2)?.requestFocus() }
     }
