@@ -1,5 +1,7 @@
 # Screenkeeper
 
+<img src="docs/brand/screenkeeper-icon.png" alt="Screenkeeper icon" width="96" align="right">
+
 A screen-time and parental-control app for Android phones, tablets and Android TV (NVIDIA Shield). Written from scratch on Android's public usage-stats APIs — no code from tvusage/ScreenUsage.
 
 ## Features

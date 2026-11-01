@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    paths-ignore: ["dist/**"]
+    paths-ignore: ["dist/**", "docs/**", "README.md"]
   release:
     types: [published]
   workflow_dispatch:
