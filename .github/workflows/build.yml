@@ -36,11 +36,14 @@ jobs:
           echo "SK_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> "$GITHUB_ENV"
           echo "SK_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> "$GITHUB_ENV"
 
-      - name: Test and build
+      - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon testDebugUnitTest assembleRelease
+          ./gradlew --no-daemon --stacktrace assembleRelease
           cp app/build/outputs/apk/release/app-release.apk Screenkeeper.apk
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon testDebugUnitTest
 
       - uses: actions/upload-artifact@v4
         with:
