@@ -8,6 +8,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
+import android.text.TextUtils
+import android.view.Gravity
+import android.view.WindowManager
+import android.widget.TextView
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.ArrayDeque
@@ -34,6 +40,7 @@ class KeyboardService : AccessibilityService() {
     override fun onInterrupt() {}
 
     override fun onDestroy() {
+        hideBubble()
         if (instance === this) instance = null
         super.onDestroy()
     }
@@ -70,6 +77,8 @@ class KeyboardService : AccessibilityService() {
         }
         node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, sel)
         node.refresh()
+        val shown = if (node.isPassword) "•".repeat(text.length) else text
+        showBubble(getString(R.string.keyboard_bubble, shown.ifEmpty { "…" }))
         Outcome.Ok(describe(node))
     }
 
@@ -77,7 +86,59 @@ class KeyboardService : AccessibilityService() {
     fun enter(): Outcome = onMain { node ->
         if (Build.VERSION.SDK_INT < 30) return@onMain Outcome.Unsupported
         val ok = node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+        if (ok) showBubble(getString(R.string.keyboard_bubble_sent))
         if (ok) Outcome.Ok(describe(node)) else Outcome.Failed
+    }
+
+    // ---- Bubble on the TV showing what the phone is typing ----
+
+    private var bubble: TextView? = null
+    private val hideBubbleLater = Runnable { hideBubble() }
+
+    /** Main thread only. An accessibility overlay needs no extra permission and never takes focus. */
+    private fun showBubble(msg: String) {
+        try {
+            val wm = getSystemService(WindowManager::class.java) ?: return
+            val view = bubble ?: TextView(this).apply {
+                textSize = 22f
+                setTextColor(Palette.TEXT)
+                maxLines = 2
+                ellipsize = TextUtils.TruncateAt.START // keep the end, where the typing happens
+                maxWidth = (resources.displayMetrics.widthPixels * 0.7f).toInt()
+                setPadding(dp(24), dp(14), dp(24), dp(14))
+                background = GradientDrawable().apply {
+                    setColor(0xEE1A232D.toInt())
+                    cornerRadius = dpf(18f)
+                    setStroke(dp(2), Palette.ACCENT)
+                }
+            }.also { v ->
+                val lp = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT,
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    y = dp(36)
+                }
+                wm.addView(v, lp)
+                bubble = v
+            }
+            view.text = msg
+            main.removeCallbacks(hideBubbleLater)
+            main.postDelayed(hideBubbleLater, 4_000)
+        } catch (_: Throwable) {
+            bubble = null
+        }
+    }
+
+    private fun hideBubble() {
+        main.removeCallbacks(hideBubbleLater)
+        val v = bubble ?: return
+        bubble = null
+        try { getSystemService(WindowManager::class.java)?.removeView(v) } catch (_: Throwable) {}
     }
 
     private fun describe(n: AccessibilityNodeInfo): Field {

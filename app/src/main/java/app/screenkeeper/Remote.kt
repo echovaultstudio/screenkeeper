@@ -41,6 +41,7 @@ import java.util.concurrent.Executors
  *   POST /override/{pkg}       {minutes}
  *   POST /launch/{pkg}
  *   POST /unpair
+ *   GET  /history/{month|year}/{key}         usage statistics for a month (2026-11) or year (2026), see UsageHistory.summary
  *   GET  /keyboard                           {enabled, field:{text, hint, password, app}|null}
  *   POST /keyboard/text        {text}        {field}   replaces the focused field's text on the TV
  *   POST /keyboard/enter                     {field}   presses the keyboard's Enter/Search key
@@ -270,6 +271,8 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
             r.method == "POST" && head == "override" && seg.size == 2 -> override(seg[1], json(r.body))
             r.method == "POST" && head == "launch" && seg.size == 2 -> ok().put("launched", Apps.launch(ctx, seg[1]))
             r.method == "POST" && head == "unpair" -> { store.removeToken(token); ok() }
+            r.method == "GET" && head == "history" && seg.size >= 2 ->
+                UsageHistory(ctx).summary(seg[1], seg.getOrNull(2), withIcons = true)
             r.method == "GET" && head == "keyboard" && seg.size == 1 -> keyboardState()
             r.method == "POST" && head == "keyboard" && seg.getOrNull(1) == "text" -> keyboardText(json(r.body))
             r.method == "POST" && head == "keyboard" && seg.getOrNull(1) == "enter" -> keyboardResult(keyboard().enter())

@@ -144,7 +144,15 @@ class RemoteKeyboardActivity : Activity() {
         io(bg, {
             sendPending()
             client.post("/keyboard/enter")
-        }, ::showError) { res -> res.optJSONObject("field")?.let(::showField) }
+        }, ::showError) { res ->
+            res.optJSONObject("field")?.let(::showField)
+            // Start fresh for the next entry. Only the phone's box is cleared: the TV keeps what was sent.
+            main.removeCallbacks(flush)
+            pending.set(null)
+            suppress = true
+            input.setText("")
+            suppress = false
+        }
     }
 
     private fun showField(field: JSONObject) {

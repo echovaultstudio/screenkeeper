@@ -21,7 +21,29 @@ class UsageTracker(ctx: Context) {
         fun total(pkgs: Set<String>): Long = perApp.entries.sumOf { if (it.key in pkgs) it.value else 0L }
     }
 
-    fun compute(start: Long, end: Long): Snapshot {
+    /** Per-app time plus how often each app was opened and how the time spreads over the hours of the day. */
+    class Detail(val perApp: Map<String, Long>, val opens: Map<String, Int>, val hours: LongArray)
+
+    fun computeDetailed(start: Long, end: Long): Detail {
+        val hours = LongArray(24)
+        val opens = HashMap<String, Int>()
+        val cal = java.util.Calendar.getInstance()
+        val snap = compute(start, end) { pkg, a, b, startedInside ->
+            if (startedInside) opens[pkg] = (opens[pkg] ?: 0) + 1
+            Time.addByHour(a, b, hours, cal)
+        }
+        return Detail(snap.perApp, opens, hours)
+    }
+
+    /**
+     * [onSession] gets every counted foreground stretch, clipped to [start, end]; `startedInside`
+     * is false for a session already running at [start] (so it isn't counted as an extra open).
+     */
+    fun compute(
+        start: Long,
+        end: Long,
+        onSession: ((pkg: String, a: Long, b: Long, startedInside: Boolean) -> Unit)? = null,
+    ): Snapshot {
         val totals = HashMap<String, Long>()
         val resumed = HashMap<String, MutableSet<String>>() // pkg -> resumed activity classes
         val since = HashMap<String, Long>() // pkg -> session start
@@ -31,7 +53,10 @@ class UsageTracker(ctx: Context) {
             val s = since.remove(pkg) ?: return
             val a = maxOf(s, start)
             val b = minOf(t, end)
-            if (b > a) totals[pkg] = (totals[pkg] ?: 0L) + (b - a)
+            if (b > a) {
+                totals[pkg] = (totals[pkg] ?: 0L) + (b - a)
+                onSession?.invoke(pkg, a, b, s >= start)
+            }
         }
 
         // Look back so sessions that began before `start` are counted from `start`.

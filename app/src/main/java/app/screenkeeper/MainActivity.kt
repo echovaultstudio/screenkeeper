@@ -175,6 +175,7 @@ class MainActivity : Activity() {
             }
             actions += button(getString(R.string.lock_now)) { Admin.lock(); render() }
         }
+        actions += button(getString(R.string.stats_open)) { startActivity(Intent(this, StatsActivity::class.java)) }
         actions += button(getString(R.string.permissions)) { showSetup() }
         actions += button(getString(R.string.refresh)) { render() }
         page.addView(buttonRow(*actions.toTypedArray()), lp(top = dp(14)))

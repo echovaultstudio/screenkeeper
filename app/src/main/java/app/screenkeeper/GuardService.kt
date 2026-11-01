@@ -36,6 +36,9 @@ class GuardService : Service() {
     private var lastBlockLaunch = 0L
     private var homeRefreshedAt = 0L
     private var screenWentOff = false
+    private lateinit var history: UsageHistory
+    private val historyWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private var historySavedAt = 0L
 
     /** TV standby / phone screen off ends every unlocked session (issue #1). Runs on the main thread, like tick(). */
     private val screenOffReceiver = object : BroadcastReceiver() {
@@ -60,6 +63,7 @@ class GuardService : Service() {
         store = RuleStore(this)
         tracker = UsageTracker(this)
         watcher = ForegroundWatcher(this)
+        history = UsageHistory(this)
         createChannels()
         val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenOffReceiver, filter, RECEIVER_NOT_EXPORTED)
@@ -83,6 +87,7 @@ class GuardService : Service() {
     override fun onDestroy() {
         handler.removeCallbacks(loop)
         try { unregisterReceiver(screenOffReceiver) } catch (_: IllegalArgumentException) {}
+        historyWorker.shutdown()
         remote?.stop()
         remote = null
         super.onDestroy()
@@ -110,6 +115,11 @@ class GuardService : Service() {
         lastTick = now
         syncRemote()
         if (!Perms.hasUsageAccess(this)) return
+        // Long-term statistics: save the last two days every 10 minutes, off the main thread.
+        if (now - historySavedAt > 10 * Time.MINUTE) {
+            historySavedAt = now
+            historyWorker.execute { try { history.record() } catch (t: Throwable) { Log.w(TAG, "history failed", t) } }
+        }
         if (now - homeRefreshedAt > 10 * Time.MINUTE) {
             homePkgs = Apps.homePackages(this) + "com.android.systemui"
             homeRefreshedAt = now

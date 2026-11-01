@@ -197,6 +197,9 @@ class RemoteActivity : Activity() {
         actions += button(getString(R.string.keyboard_open)) {
             startActivity(Intent(this, RemoteKeyboardActivity::class.java))
         }
+        actions += button(getString(R.string.stats_open)) {
+            startActivity(Intent(this, StatsActivity::class.java).putExtra(StatsActivity.EXTRA_REMOTE, true))
+        }
         actions += button(getString(if (hasPin) R.string.change_pin else R.string.set_pin)) {
             val setIt = { current: String? ->
                 PinPad.choose(this) { pin ->

@@ -27,6 +27,22 @@ object Time {
     }
 
     fun dayLabel(dayStart: Long): String = SimpleDateFormat("EEE", Locale.getDefault()).format(dayStart)
+
+    /** Add the stretch [a, b) to [hours] (index = local hour of day), split at each full hour. */
+    fun addByHour(a: Long, b: Long, hours: LongArray, cal: Calendar = Calendar.getInstance()) {
+        var t = a
+        while (t < b) {
+            cal.timeInMillis = t
+            val h = cal.get(Calendar.HOUR_OF_DAY)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            cal.add(Calendar.HOUR_OF_DAY, 1)
+            val next = minOf(b, maxOf(cal.timeInMillis, t + 1))
+            hours[h] += next - t
+            t = next
+        }
+    }
 }
 
 fun formatDuration(ms: Long): String {

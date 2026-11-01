@@ -5,6 +5,7 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 ## Features
 
 - Daily and 7-day usage per app, with a 7-day bar chart (device-wide and per app)
+- **Statistics**: month and year views with totals, daily average, a chart per day or month, time-of-day profile, most used apps (time, share and times opened) and a yearly review; history is kept on the device indefinitely
 - Daily time limit per app, with a warning notification 5 minutes before
 - Allowed hours per app (windows can cross midnight, e.g. 20:00–02:00)
 - Watch breaks: after X minutes of continuous use, a Y-minute break with countdown
@@ -12,8 +13,8 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 - 4-digit PIN: protect settings, lock individual apps, or grant 15 extra minutes from the block screen
 - Wrong-PIN lockout (5 tries, then 30 s)
 - Works with touch, D-pad, and remote number keys; shows on the Android TV home row
-- **Phone remote**: pair your phone with the Shield once (6-digit code on the TV) and set limits, block apps, set or change the PIN and lock the TV's settings from the phone
-- **Phone keyboard**: type into search boxes and logins on the TV from your phone's keyboard
+- **Phone remote**: pair your phone with the Shield once (6-digit code on the TV) and set limits, block apps, set or change the PIN, lock the TV's settings and see its statistics from the phone
+- **Phone keyboard**: type into search boxes and logins on the TV from your phone's keyboard; the TV shows what's being typed
 - **Update the TV from your phone**: installs Screenkeeper (or any APK) on the Shield over Network debugging — no computer
 - Restarts after reboot; nothing leaves your home network (the remote feature talks TV ↔ phone over local Wi-Fi only; there is no cloud)
 
@@ -85,7 +86,7 @@ Each pairing creates a random token that is stored on both devices; the code is 
 ### Type on the TV from the phone
 
 1. On the TV: Screenkeeper → **Phone remote** → **Phone keyboard** opens the accessibility settings; turn on **Screenkeeper phone keyboard** (on a Shield: *Settings → Device Preferences → Accessibility*). Or use **Grant permissions on TV** from the phone (below), which does it over adb.
-2. On the TV, select a search box or text field. On the phone: TV dashboard → **Keyboard** and type. Text appears on the TV as you type (backspace, autocorrect, paste and voice typing work); **Enter / Search** presses the TV keyboard's action key.
+2. On the TV, select a search box or text field. On the phone: TV dashboard → **Keyboard** and type. Text appears on the TV as you type (backspace, autocorrect, paste and voice typing work), and a bubble at the top of the TV screen shows what's being typed. **Enter / Search** presses the TV keyboard's action key and clears the box on the phone, ready for the next search; the TV keeps what was sent.
 
 It works with regular Android text fields (Play Store, browsers, most login screens, Kodi, Plex…). Apps that draw their own letter grid instead of a real text field can't be typed into this way. The service only acts when a paired phone sends text.
 
@@ -101,13 +102,15 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 ## Using it
 
 - Main screen: today's total, 7-day chart, apps sorted by use. Select an app to set rules; long-press to open it.
+- **Statistics** (main screen, or the TV dashboard on the phone for the paired TV's numbers): switch between **Month** and **Year**, step with ‹ ›, or tap the title to jump to any month or year with data. In the year view, tap a month to open it.
 - Set a PIN first if kids use the device, then turn on rules. Settings re-lock 10 minutes after the PIN is entered (or press **Lock settings**).
 - When a rule triggers, a full-screen notice covers the app. **Go home** leaves; **Enter PIN** unlocks a PIN-locked app for that visit, or gives 15 more minutes for other blocks.
 
 ## Limits and ideas
 
 - A determined user can uninstall it or revoke permissions in Settings. tvusage closes this with an Accessibility service that guards the uninstall screens; that's a reasonable next feature. Locking the Settings app with a PIN rule is a simple stopgap.
-- Usage is measured per device; there's no cloud sync between your phone and the Shield.
+- Usage is measured per device; there's no cloud sync between your phone and the Shield. The phone can view the TV's statistics over the local network.
+- Android only keeps detailed usage events for about a week, so Screenkeeper saves its own history (one small file per month in the app's storage, written every 10 minutes). Daily detail starts about a week before you installed 1.3.0; earlier months are filled from Android's monthly totals, per app only, and marked as estimated. Uninstalling the app deletes the history.
 - Rename the app in `app/src/main/res/values/strings.xml` (`app_name`) and the package ID in `app/build.gradle.kts` (`applicationId`).
 
 ## Code map
@@ -115,6 +118,8 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 | File | What it does |
 |---|---|
 | `Usage.kt` | Foreground time from raw usage events; live front-app watcher |
+| `UsageHistory.kt` | Long-term history (per-day app time, opens, hour profile) and month/year summaries (`Summaries` is unit tested) |
+| `StatsActivity.kt` | Statistics dashboard, for this device or a paired TV |
 | `Enforcer.kt` | Pure block/allow decision and watch-break tracking (unit tested) |
 | `GuardService.kt` | Foreground service, 1 s check loop, warnings, boot receiver |
 | `RuleStore.kt` | Rules, salted PIN hash, overrides, break state |
@@ -123,7 +128,7 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 | `BlockActivity.kt` | Block screen with break countdown and PIN unlock |
 | `Ui.kt` | D-pad-friendly widgets, PIN pad, bar chart |
 | `RuleEditor.kt` | The rules section, shared by the local and remote app pages |
-| `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN) |
+| `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN, keyboard, statistics) |
 | `RemoteClient.kt` | Phone side: HTTP client and DNS-SD discovery of TVs |
 | `RemoteActivity.kt` / `RemoteAppActivity.kt` | Phone screens: find/pair a TV, its dashboard, per-app rules over the network |
 | `KeyboardService.kt` | TV: accessibility service that sets the focused text field's text for the phone keyboard |

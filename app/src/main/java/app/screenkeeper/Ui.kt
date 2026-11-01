@@ -289,6 +289,13 @@ class BarChartView(ctx: Context) : View(ctx) {
     var data: List<Pair<String, Long>> = emptyList()
         set(v) { field = v; invalidate() }
 
+    /** Draw every Nth label only (31 days or 24 hours don't fit otherwise). */
+    var labelEvery = 1
+    /** Print the time above each bar. Off for dense charts. */
+    var showValues = true
+    /** Bar drawn in the bright colour; -1 = the last one (today), -2 = none. */
+    var highlight = -1
+
     private val bar = Paint(Paint.ANTI_ALIAS_FLAG)
     private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Palette.MUTED
@@ -318,11 +325,12 @@ class BarChartView(ctx: Context) : View(ctx) {
         data.forEachIndexed { i, (name, ms) ->
             val cx = colW * i + colW / 2
             val h = (bottom - top) * (ms / max)
-            bar.color = if (i == n - 1) Palette.ACCENT else Palette.ACCENT_DIM
+            val hi = if (highlight == -1) n - 1 else highlight
+            bar.color = if (i == hi) Palette.ACCENT else Palette.ACCENT_DIM
             rect.set(cx - barW / 2, bottom - maxOf(h, context.dpf(2f)), cx + barW / 2, bottom)
             c.drawRoundRect(rect, context.dpf(5f), context.dpf(5f), bar)
-            c.drawText(name, cx, height - context.dpf(5f), label)
-            if (ms >= 60_000L) c.drawText(formatDuration(ms), cx, rect.top - context.dpf(5f), value)
+            if (i % labelEvery == 0) c.drawText(name, cx, height - context.dpf(5f), label)
+            if (showValues && ms >= 60_000L) c.drawText(formatDuration(ms), cx, rect.top - context.dpf(5f), value)
         }
     }
 }

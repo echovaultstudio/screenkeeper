@@ -144,6 +144,8 @@
     <string name="keyboard_no_field">No text field on the TV right now. Open a search box or login screen there.</string>
     <string name="keyboard_not_enabled">The keyboard isn\'t turned on on the TV. On the TV: Screenkeeper → Phone remote → Phone keyboard.</string>
     <string name="keyboard_failed">This app on the TV didn\'t accept the text. Some apps use their own on-screen keyboard that can\'t be typed into from outside.</string>
+    <string name="keyboard_bubble">⌨  %1$s</string>
+    <string name="keyboard_bubble_sent">⌨  ↵ Sent</string>
     <string name="keyboard_old_tv">Screenkeeper on the TV is too old for the keyboard. Update it there.</string>
 
     <!-- Update the TV over adb, from the phone -->
@@ -168,4 +170,46 @@
     <string name="adb_update_sig_mismatch">The TV\'s copy was signed with a different key, so it can\'t be updated in place. Uninstall Screenkeeper on the TV once (this clears its rules), then install again. A fixed signing key in CI avoids this — see the README.</string>
     <string name="adb_update_downgrade">The TV already has a newer version than this APK.</string>
     <string name="adb_update_help">On the TV, once: Settings → Device Preferences → About → press OK on Build 7 times. Then Settings → Device Preferences → Developer options → Network debugging: On. The IP shown there is the address above (port 5555).</string>
+    <!-- Statistics -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_open">Statistics</string>
+    <string name="stats_month">Month</string>
+    <string name="stats_year">Year</string>
+    <string name="stats_pick_month">Choose a month</string>
+    <string name="stats_pick_year">Choose a year</string>
+    <string name="stats_total">Total screen time</string>
+    <string name="stats_avg">%1$s a day on average</string>
+    <plurals name="stats_active_days">
+        <item quantity="one">%d day used</item>
+        <item quantity="other">%d days used</item>
+    </plurals>
+    <plurals name="stats_opens">
+        <item quantity="one">opened once</item>
+        <item quantity="other">opened %d times</item>
+    </plurals>
+    <string name="stats_change_month">%1$s vs the previous month</string>
+    <string name="stats_change_year">%1$s vs the previous year</string>
+    <string name="stats_estimated_note">Estimated from Android\'s monthly totals, from before Screenkeeper kept its own history. No daily details.</string>
+    <string name="stats_empty">No usage recorded for this period. Screenkeeper keeps history from the day it was updated to this version (plus about a week before).</string>
+    <string name="stats_per_day">Each day</string>
+    <string name="stats_per_month">Each month</string>
+    <string name="stats_time_of_day">Time of day</string>
+    <string name="stats_time_of_day_hint">When the screen is used, by hour</string>
+    <string name="stats_summary">Summary</string>
+    <string name="stats_year_summary">Year in review</string>
+    <string name="stats_top_apps">Most used apps</string>
+    <string name="stats_app_share">%1$d%% of the time</string>
+    <string name="stats_old_tv">Screenkeeper on the TV is too old for statistics. Update it there (Update TV over ADB).</string>
+    <string name="stats_nothing">Nothing recorded yet.</string>
+    <string name="stats_sum_total">%1$s in %2$s, about %3$s a day.</string>
+    <string name="stats_sum_top">Most used: %1$s, %2$s (%3$d%%).</string>
+    <string name="stats_sum_top3">Then %1$s and %2$s.</string>
+    <string name="stats_sum_busiest_month">Busiest month: %1$s (%2$s).</string>
+    <string name="stats_sum_busiest_day">Busiest day: %1$s (%2$s).</string>
+    <string name="stats_sum_peak">Most active between %1$s and %2$s.</string>
+    <string name="stats_sum_opens">Apps were opened %1$d times.</string>
+    <string name="stats_sum_change_month">%1$s compared with the month before.</string>
+    <string name="stats_sum_change_year">%1$s compared with the year before.</string>
+    <string name="stats_sum_estimated">Some months are estimates from Android\'s monthly totals.</string>
 </resources>
+
