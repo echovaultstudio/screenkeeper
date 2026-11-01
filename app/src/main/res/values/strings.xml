@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Screenkeeper</string>
+
+    <!-- Service / notifications -->
+    <string name="service_text">Watching screen time</string>
+    <string name="channel_service">Background guard</string>
+    <string name="channel_alerts">Time warnings</string>
+    <string name="warn_title">%1$s: almost out of time</string>
+    <string name="warn_text">About %1$s left today</string>
+
+    <!-- PIN -->
+    <string name="enter_pin">Enter PIN</string>
+    <string name="enter_current_pin">Enter current PIN</string>
+    <string name="pin_choose">Choose a 4-digit PIN</string>
+    <string name="pin_confirm">Enter the PIN again</string>
+    <string name="pin_mismatch">PINs didn\'t match. Try again.</string>
+    <string name="pin_wrong">Wrong PIN</string>
+    <string name="pin_locked_out">Too many tries. Wait 30 seconds.</string>
+    <string name="pin_extra_time">Enter PIN for 15 more minutes</string>
+    <string name="set_pin">Set PIN</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="remove_pin">Remove PIN</string>
+    <string name="lock_now">Lock settings</string>
+    <string name="locked_text">Settings are protected with a PIN.</string>
+
+    <!-- Setup -->
+    <string name="setup_title">Set up Screenkeeper</string>
+    <string name="setup_intro">Two special permissions are needed to measure app time and to show the block screen. Grant them, then come back here.</string>
+    <string name="perm_usage">Usage access</string>
+    <string name="perm_usage_desc">Required. Lets Screenkeeper see which app is open and for how long.</string>
+    <string name="perm_overlay">Display over other apps</string>
+    <string name="perm_overlay_desc">Required. Lets the block screen appear on top of an app.</string>
+    <string name="perm_notif">Notifications</string>
+    <string name="perm_notif_desc">Optional. Warns you 5 minutes before a limit.</string>
+    <string name="perm_battery">Ignore battery optimization</string>
+    <string name="perm_battery_desc">Recommended on phones, so limits keep working in the background.</string>
+    <string name="adb_button">Settings screen missing? Show ADB commands</string>
+    <string name="adb_title">Grant with ADB</string>
+    <string name="adb_body">Some TVs hide these settings. Enable Developer options and network debugging on the device, then run these from a computer (after adb connect &lt;device-ip&gt;):</string>
+
+    <!-- Dashboard -->
+    <string name="loading">Loading usage…</string>
+    <string name="today_total">Today %1$s</string>
+    <string name="week_total">Last 7 days %1$s · %2$s/day average</string>
+    <string name="permissions">Permissions</string>
+    <string name="refresh">Refresh</string>
+    <string name="apps_heading">Apps</string>
+    <string name="apps_hint">Select an app to set limits. Long-press to open it.</string>
+    <string name="row_stats">Today %1$s · 7 days %2$s</string>
+
+    <!-- Detail -->
+    <string name="detail_today">Today %1$s</string>
+    <string name="remaining">%1$s left today</string>
+    <string name="limit_used_up">Daily limit used up</string>
+    <string name="rules_heading">Rules</string>
+    <string name="rule_limit">Daily limit</string>
+    <string name="rule_hours">Allowed hours</string>
+    <string name="any_time">Any time</string>
+    <string name="set_window">Set allowed window…</string>
+    <string name="allowed_from">Allowed from</string>
+    <string name="allowed_until">Allowed until</string>
+    <string name="rule_break">Watch breaks</string>
+    <string name="break_value">every %1$s, %2$s break</string>
+    <string name="break_every">Take a break every</string>
+    <string name="break_length">Break length</string>
+    <string name="rule_block">Block completely</string>
+    <string name="rule_unlimited">Unlimited (ignore limits)</string>
+    <string name="rule_pin">Require PIN to open</string>
+    <string name="actions_heading">Actions</string>
+    <string name="open_app">Open app</string>
+    <string name="app_info">App info</string>
+    <string name="reset_rules">Remove all rules for this app</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+
+    <!-- Block screen -->
+    <string name="go_home">Go home</string>
+    <string name="block_blocked">This app is blocked</string>
+    <string name="block_blocked_d">It can\'t be opened right now.</string>
+    <string name="block_hours">Not right now</string>
+    <string name="block_hours_d">This app is allowed between %1$s and %2$s.</string>
+    <string name="block_limit">Time\'s up for today</string>
+    <string name="block_limit_d">The daily limit of %1$s is used up. It resets at midnight.</string>
+    <string name="block_break">Break time</string>
+    <string name="block_break_d">Stretch, grab some water, rest your eyes. Back in:</string>
+    <string name="block_pin">PIN required</string>
+    <string name="block_pin_d">Enter the PIN to open this app.</string>
+</resources>

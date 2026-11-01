@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: a TV screen with a clock face. Safe zone is the centre 66dp of 108dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#4FD1C5"
+        android:strokeWidth="4"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M34,38 h40 a4,4 0 0 1 4,4 v24 a4,4 0 0 1 -4,4 h-40 a4,4 0 0 1 -4,-4 v-24 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:strokeColor="#4FD1C5"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M46,76 h16" />
+    <path
+        android:strokeColor="#E8EDF2"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,45 v9 l6,4" />
+</vector>
