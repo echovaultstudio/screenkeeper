@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths-ignore: ["dist/**"]
   release:
     types: [published]
   workflow_dispatch:
@@ -56,6 +57,18 @@ jobs:
         with:
           name: Screenkeeper-apk
           path: Screenkeeper.apk
+
+      # Keep the latest APK in the repo so there is a permanent download link without needing a release.
+      - name: Publish APK to dist/
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p dist
+          cp Screenkeeper.apk dist/Screenkeeper.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/Screenkeeper.apk
+          git diff --cached --quiet || git commit -m "Build: update dist/Screenkeeper.apk from ${GITHUB_SHA::7} [skip ci]"
+          git push origin HEAD:main
 
       - name: Attach APK to the release (tags and published releases)
         if: startsWith(github.ref, 'refs/tags/')

@@ -16,11 +16,14 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 
 ## Get the APK
 
-**Option A — GitHub (no tools needed)**
-1. Create a new GitHub repository and upload this folder (keep `.github/workflows/build.yml`).
-2. Open the **Actions** tab → **Build APK** runs automatically (about 5 min).
-3. Open the finished run and download **Screenkeeper-apk** (a zip containing `Screenkeeper.apk`).
-4. To make a permanent download link: create a tag like `v1.0.0`; the APK is attached to a Release.
+**Option A — direct download (no tools needed)**
+Every push to `main` builds the app and commits the result to [`dist/Screenkeeper.apk`](dist/Screenkeeper.apk). Permanent link for phones, the Shield's *Downloader* app, or `wget`:
+
+```
+https://github.com/echovaultstudio/tvlocker/raw/main/dist/Screenkeeper.apk
+```
+
+The same APK is also attached to each **Actions** run as the `Screenkeeper-apk` artifact, and to a Release when you create a tag like `v1.0.0`.
 
 **Option B — Android Studio**
 Open the folder, wait for sync, then *Build → Build App Bundle(s) / APK(s) → Build APK(s)*.
