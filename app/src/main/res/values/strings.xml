@@ -128,8 +128,8 @@
     <string name="keyboard_service_label">Screenkeeper phone keyboard</string>
     <string name="keyboard_service_desc">Lets a phone paired under Phone remote type into text fields on this TV. It only acts when a paired phone sends text, and only touches the focused text field.</string>
     <string name="keyboard_tv_row">Phone keyboard</string>
-    <string name="keyboard_tv_hint">Type on this TV from your phone. Turn on "Screenkeeper phone keyboard" in the accessibility settings that open (on a Shield: Settings → Device Preferences → Accessibility).</string>
-    <string name="keyboard_tv_adb">Can't find it? Show ADB commands</string>
+    <string name="keyboard_tv_hint">Type on this TV from your phone. Turn on \"Screenkeeper phone keyboard\" in the accessibility settings that open (on a Shield: Settings → Device Preferences → Accessibility).</string>
+    <string name="keyboard_tv_adb">Can\'t find it? Show ADB commands</string>
     <string name="keyboard_tv_adb_body">From a computer, after adb connect &lt;tv-ip&gt;. Note: this replaces any other accessibility services that are turned on.</string>
     <string name="keyboard_open">Keyboard</string>
     <string name="keyboard_title">Type on %1$s</string>
@@ -139,11 +139,11 @@
     <string name="keyboard_clear">Clear</string>
     <string name="keyboard_reload">Read from TV</string>
     <string name="keyboard_status_field">Typing into: %1$s</string>
-    <string name="keyboard_status_password">Password field — text isn't shown back</string>
+    <string name="keyboard_status_password">Password field — text isn\'t shown back</string>
     <string name="keyboard_status_waiting">Connecting…</string>
     <string name="keyboard_no_field">No text field on the TV right now. Open a search box or login screen there.</string>
-    <string name="keyboard_not_enabled">The keyboard isn't turned on on the TV. On the TV: Screenkeeper → Phone remote → Phone keyboard.</string>
-    <string name="keyboard_failed">This app on the TV didn't accept the text. Some apps use their own on-screen keyboard that can't be typed into from outside.</string>
+    <string name="keyboard_not_enabled">The keyboard isn\'t turned on on the TV. On the TV: Screenkeeper → Phone remote → Phone keyboard.</string>
+    <string name="keyboard_failed">This app on the TV didn\'t accept the text. Some apps use their own on-screen keyboard that can\'t be typed into from outside.</string>
     <string name="keyboard_old_tv">Screenkeeper on the TV is too old for the keyboard. Update it there.</string>
 
     <!-- Update the TV over adb, from the phone -->
@@ -153,19 +153,19 @@
     <string name="adb_update_address">TV address (Network debugging)</string>
     <string name="adb_update_phone_version">This phone: %1$s</string>
     <string name="adb_update_tv_version">TV: %1$s</string>
-    <string name="adb_update_send_self">Install this phone's Screenkeeper %1$s on the TV</string>
+    <string name="adb_update_send_self">Install this phone\'s Screenkeeper %1$s on the TV</string>
     <string name="adb_update_pick">Pick an APK…</string>
     <string name="adb_update_grant">Grant permissions on TV</string>
     <string name="adb_update_connecting">Connecting to %1$s…</string>
-    <string name="adb_update_allow">Look at the TV: tick "Always allow from this computer" and choose OK. (Only the first time.)</string>
+    <string name="adb_update_allow">Look at the TV: tick \"Always allow from this computer\" and choose OK. (Only the first time.)</string>
     <string name="adb_update_installing">Sending the APK…</string>
     <string name="adb_update_progress">%1$d%%</string>
     <string name="adb_update_done">Installed. Screenkeeper on the TV restarts by itself.</string>
     <string name="adb_update_granting">Granting usage access, overlay, battery and keyboard…</string>
     <string name="adb_update_granted">Done: usage access, display over other apps, battery exemption and the phone keyboard are on.</string>
     <string name="adb_update_failed">Failed: %1$s</string>
-    <string name="adb_update_bad_address">Enter the TV's IP address, e.g. 192.168.1.50 or 192.168.1.50:5555.</string>
-    <string name="adb_update_sig_mismatch">The TV's copy was signed with a different key, so it can't be updated in place. Uninstall Screenkeeper on the TV once (this clears its rules), then install again. A fixed signing key in CI avoids this — see the README.</string>
+    <string name="adb_update_bad_address">Enter the TV\'s IP address, e.g. 192.168.1.50 or 192.168.1.50:5555.</string>
+    <string name="adb_update_sig_mismatch">The TV\'s copy was signed with a different key, so it can\'t be updated in place. Uninstall Screenkeeper on the TV once (this clears its rules), then install again. A fixed signing key in CI avoids this — see the README.</string>
     <string name="adb_update_downgrade">The TV already has a newer version than this APK.</string>
     <string name="adb_update_help">On the TV, once: Settings → Device Preferences → About → press OK on Build 7 times. Then Settings → Device Preferences → Developer options → Network debugging: On. The IP shown there is the address above (port 5555).</string>
 </resources>
