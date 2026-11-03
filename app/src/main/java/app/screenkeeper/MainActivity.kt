@@ -176,6 +176,11 @@ class MainActivity : Activity() {
             actions += button(getString(R.string.lock_now)) { Admin.lock(); render() }
         }
         actions += button(getString(R.string.stats_open)) { startActivity(Intent(this, StatsActivity::class.java)) }
+        val sched = store.pinSchedule()
+        val schedLabel = getString(R.string.pin_sched_open) + ":  " +
+            if (sched.enabled && store.hasPin()) getString(R.string.pin_sched_summary_on, formatClock(sched.fromMin) + "–" + formatClock(sched.toMin))
+            else getString(R.string.off)
+        actions += button(schedLabel) { startActivity(Intent(this, PinScheduleActivity::class.java)) }
         actions += button(getString(R.string.permissions)) { showSetup() }
         actions += button(getString(R.string.refresh)) { render() }
         page.addView(buttonRow(*actions.toTypedArray()), lp(top = dp(14)))

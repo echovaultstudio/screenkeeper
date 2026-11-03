@@ -3,12 +3,21 @@ package app.screenkeeper
 /** Pure decision logic: given the rule and current state, should the app be blocked, and why? */
 object Enforcer {
 
-    fun inAllowedWindow(rule: AppRule, minuteOfDay: Int): Boolean {
-        if (!rule.hasWindow) return true
-        val from = rule.allowedFromMin
-        val to = rule.allowedToMin
-        return if (from < to) minuteOfDay in from until to
-        else minuteOfDay >= from || minuteOfDay < to // wraps past midnight, e.g. 20:00–02:00
+    fun inAllowedWindow(rule: AppRule, minuteOfDay: Int): Boolean =
+        !rule.hasWindow || inWindow(rule.allowedFromMin, rule.allowedToMin, minuteOfDay)
+
+    /** Is [minuteOfDay] in [from, to)? The window may wrap past midnight (20:00–02:00); from == to means all day. */
+    fun inWindow(from: Int, to: Int, minuteOfDay: Int): Boolean = when {
+        from == to -> true
+        from < to -> minuteOfDay in from until to
+        else -> minuteOfDay >= from || minuteOfDay < to
+    }
+
+    /** Does opening [pkg] need the PIN right now, by its own rule or by the device-wide schedule? */
+    fun pinRequired(rule: AppRule?, schedule: PinSchedule?, pkg: String, minuteOfDay: Int): Boolean {
+        if (rule != null && rule.pinLocked && (!rule.hasPinWindow || inWindow(rule.pinFromMin, rule.pinToMin, minuteOfDay))) return true
+        if (schedule != null && schedule.enabled && schedule.covers(pkg) && inWindow(schedule.fromMin, schedule.toMin, minuteOfDay)) return true
+        return false
     }
 
     fun evaluate(
@@ -19,8 +28,10 @@ object Enforcer {
         breakUntil: Long,
         overrideUntil: Long,
         sessionUnlocked: Boolean,
+        /** The device-wide PIN schedule requires the PIN for this app right now. */
+        schedulePin: Boolean = false,
     ): BlockReason? {
-        if (rule == null || rule.isDefault) return null
+        if (rule == null || rule.isDefault) return if (schedulePin && !sessionUnlocked) BlockReason.PIN_LOCKED else null
         if (overrideUntil > now) return null // PIN-granted extra time
         if (rule.blocked) return BlockReason.BLOCKED
         if (!rule.unlimited) {
@@ -28,7 +39,8 @@ object Enforcer {
             if (rule.dailyLimitMin > 0 && usedTodayMs >= rule.dailyLimitMin * 60_000L) return BlockReason.LIMIT_REACHED
             if (rule.hasBreaks && breakUntil > now) return BlockReason.ON_BREAK
         }
-        if (rule.pinLocked && !sessionUnlocked) return BlockReason.PIN_LOCKED
+        val rulePin = rule.pinLocked && (!rule.hasPinWindow || inWindow(rule.pinFromMin, rule.pinToMin, minuteOfDay))
+        if ((rulePin || schedulePin) && !sessionUnlocked) return BlockReason.PIN_LOCKED
         return null
     }
 

@@ -69,6 +69,10 @@
     <string name="rule_block">Block completely</string>
     <string name="rule_unlimited">Unlimited (ignore limits)</string>
     <string name="rule_pin">Require PIN to open</string>
+    <string name="pin_always">Always</string>
+    <string name="pin_between">Only between certain times…</string>
+    <string name="pin_from">PIN needed from</string>
+    <string name="pin_until">PIN needed until</string>
     <string name="actions_heading">Actions</string>
     <string name="open_app">Open app</string>
     <string name="app_info">App info</string>
@@ -88,6 +92,7 @@
     <string name="block_break_d">Stretch, grab some water, rest your eyes. Back in:</string>
     <string name="block_pin">PIN required</string>
     <string name="block_pin_d">Enter the PIN to open this app.</string>
+    <string name="block_pin_until">Enter the PIN to open this app. The PIN is needed until %1$s.</string>
 
     <!-- Phone remote -->
     <string name="remote_heading">Phone remote</string>
@@ -211,5 +216,29 @@
     <string name="stats_sum_change_month">%1$s compared with the month before.</string>
     <string name="stats_sum_change_year">%1$s compared with the year before.</string>
     <string name="stats_sum_estimated">Some months are estimates from Android\'s monthly totals.</string>
+
+    <!-- PIN schedule -->
+    <string name="pin_sched_open">PIN schedule</string>
+    <string name="pin_sched_title">PIN schedule</string>
+    <string name="pin_sched_intro">Ask for the PIN during certain hours — for all apps, or only the ones you tick. Each app can also have its own PIN times under its rules.</string>
+    <string name="pin_sched_enabled">Use the PIN schedule</string>
+    <string name="pin_sched_apps">Which apps</string>
+    <string name="pin_sched_all">All apps</string>
+    <string name="pin_sched_all_d">Every app except Screenkeeper and the home screen</string>
+    <string name="pin_sched_tick_all">Tick all</string>
+    <string name="pin_sched_tick_none">Untick all</string>
+    <plurals name="pin_sched_count">
+        <item quantity="one">%d app ticked</item>
+        <item quantity="other">%d apps ticked</item>
+    </plurals>
+    <string name="pin_sched_who_all">all apps</string>
+    <plurals name="pin_sched_who_some">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="pin_sched_active">On: %1$s need the PIN between %2$s.</string>
+    <string name="pin_sched_inactive">Off. When on, the PIN is needed between %1$s.</string>
+    <string name="pin_sched_summary_on">On, %1$s</string>
+    <string name="pin_sched_old_tv">Screenkeeper on the TV is too old for the PIN schedule. Update it there (Update TV over ADB).</string>
 </resources>
 

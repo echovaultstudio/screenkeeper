@@ -95,7 +95,8 @@ class BlockActivity : Activity() {
             BlockReason.LIMIT_REACHED -> getString(R.string.block_limit) to
                 getString(R.string.block_limit_d, formatMinutes(rule.dailyLimitMin))
             BlockReason.ON_BREAK -> getString(R.string.block_break) to getString(R.string.block_break_d)
-            BlockReason.PIN_LOCKED -> getString(R.string.block_pin) to getString(R.string.block_pin_d)
+            BlockReason.PIN_LOCKED -> getString(R.string.block_pin) to (pinUntil(rule)?.let { getString(R.string.block_pin_until, formatClock(it)) }
+                ?: getString(R.string.block_pin_d))
         }
         page.addView(text(headline, 22f, Palette.ACCENT, bold = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, top = dp(20)))
         page.addView(text(detail, 16f, Palette.MUTED).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, top = dp(6)))
@@ -115,6 +116,16 @@ class BlockActivity : Activity() {
         home.requestFocus()
         handler.removeCallbacks(ticker)
         handler.post(ticker)
+    }
+
+    /** End of the PIN window that applies right now, or null when the PIN is always needed. */
+    private fun pinUntil(rule: AppRule): Int? {
+        val minute = Time.minuteOfDay(System.currentTimeMillis())
+        if (rule.pinLocked && !rule.hasPinWindow) return null
+        if (rule.pinLocked && Enforcer.inWindow(rule.pinFromMin, rule.pinToMin, minute)) return rule.pinToMin
+        val s = store.pinSchedule()
+        if (s.enabled && s.covers(pkg) && s.fromMin != s.toMin && Enforcer.inWindow(s.fromMin, s.toMin, minute)) return s.toMin
+        return null
     }
 
     private fun askPin() {

@@ -143,8 +143,12 @@ class GuardService : Service() {
         }
 
         val rule = store.rule(fg)
+        val minute = Time.minuteOfDay(now)
+        val schedule = store.pinSchedule()
+        val schedulePin = store.hasPin() && Enforcer.pinRequired(null, schedule, fg, minute)
         if (rule == null) {
             lastFg = fg
+            if (schedulePin && GuardState.unlockedPkg != fg) launchBlock(fg, BlockReason.PIN_LOCKED, now)
             return
         }
         breaks.tick(fg, rule, now, dt)?.let { store.setBreakUntil(fg, it) }
@@ -154,11 +158,12 @@ class GuardService : Service() {
         val reason = Enforcer.evaluate(
             rule = rule,
             usedTodayMs = used,
-            minuteOfDay = Time.minuteOfDay(now),
+            minuteOfDay = minute,
             now = now,
             breakUntil = store.breakUntil(fg),
             overrideUntil = store.overrideUntil(fg),
             sessionUnlocked = GuardState.unlockedPkg == fg,
+            schedulePin = schedulePin,
         )
         if (reason != null) launchBlock(fg, reason, now) else maybeWarn(fg, rule, used, now)
     }

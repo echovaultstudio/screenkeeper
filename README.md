@@ -11,6 +11,7 @@ A screen-time and parental-control app for Android phones, tablets and Android T
 - Watch breaks: after X minutes of continuous use, a Y-minute break with countdown
 - Block an app completely, or mark it unlimited
 - 4-digit PIN: protect settings, lock individual apps, or grant 15 extra minutes from the block screen
+- **PIN times**: require the PIN only during certain hours, per app (e.g. app A only 21:00–00:00) or with a device-wide **PIN schedule** where you tick *All apps* or just the apps it covers
 - Wrong-PIN lockout (5 tries, then 30 s)
 - Works with touch, D-pad, and remote number keys; shows on the Android TV home row
 - **Phone remote**: pair your phone with the Shield once (6-digit code on the TV) and set limits, block apps, set or change the PIN, lock the TV's settings and see its statistics from the phone
@@ -104,6 +105,8 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 - Main screen: today's total, 7-day chart, apps sorted by use. Select an app to set rules; long-press to open it.
 - **Statistics** (main screen, or the TV dashboard on the phone for the paired TV's numbers): switch between **Month** and **Year**, step with ‹ ›, or tap the title to jump to any month or year with data. In the year view, tap a month to open it.
 - Set a PIN first if kids use the device, then turn on rules. Settings re-lock 10 minutes after the PIN is entered (or press **Lock settings**).
+- **PIN times per app**: open an app → **Require PIN to open** → *Off*, *Always*, or *Only between certain times…* and pick the start and end (windows can cross midnight, e.g. 21:00–00:00).
+- **PIN schedule for many apps**: main screen → **PIN schedule** (on the phone: TV dashboard → **PIN schedule** for the TV). Tick *Use the PIN schedule*, set *From* and *Until*, then tick *All apps* or untick it and tick the apps you want. Changes save straight away. An app needs the PIN if either its own PIN times or the schedule say so; Screenkeeper and the home screen are never locked.
 - When a rule triggers, a full-screen notice covers the app. **Go home** leaves; **Enter PIN** unlocks a PIN-locked app for that visit, or gives 15 more minutes for other blocks.
 
 ## Limits and ideas
@@ -128,7 +131,8 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 | `BlockActivity.kt` | Block screen with break countdown and PIN unlock |
 | `Ui.kt` | D-pad-friendly widgets, PIN pad, bar chart |
 | `RuleEditor.kt` | The rules section, shared by the local and remote app pages |
-| `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN, keyboard, statistics) |
+| `PinScheduleActivity.kt` | Device-wide PIN schedule with tick boxes, for this device or a paired TV |
+| `Remote.kt` | Protocol constants and the HTTP server the TV runs (pairing, state, rules, PIN, PIN schedule, keyboard, statistics) |
 | `RemoteClient.kt` | Phone side: HTTP client and DNS-SD discovery of TVs |
 | `RemoteActivity.kt` / `RemoteAppActivity.kt` | Phone screens: find/pair a TV, its dashboard, per-app rules over the network |
 | `KeyboardService.kt` | TV: accessibility service that sets the focused text field's text for the phone keyboard |

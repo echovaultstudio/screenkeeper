@@ -58,8 +58,9 @@ class RuleStore(ctx: Context) {
     fun clearPin() {
         val e = prefs.edit().remove(PIN_HASH).remove(PIN_SALT).remove(PIN_FAILS).remove(PIN_LOCK_UNTIL)
         // Rules that require a PIN make no sense without one.
+        e.remove(PIN_SCHEDULE)
         for ((pkg, r) in allRules()) if (r.pinLocked) {
-            val nr = r.copy(pinLocked = false)
+            val nr = r.copy(pinLocked = false, pinFromMin = -1, pinToMin = -1)
             if (nr.isDefault) e.remove(RULE + pkg) else e.putString(RULE + pkg, toJson(nr))
         }
         e.apply()
@@ -153,6 +154,13 @@ class RuleStore(ctx: Context) {
 
     fun clearSavedRemote() = prefs.edit().remove(REMOTE_HOST).remove(REMOTE_TOKEN).remove(REMOTE_NAME).apply()
 
+    /** Device-wide PIN schedule (see [PinSchedule]). */
+    fun pinSchedule(): PinSchedule = prefs.getString(PIN_SCHEDULE, null)?.let {
+        try { pinScheduleFromJson(JSONObject(it)) } catch (_: Exception) { null }
+    } ?: PinSchedule()
+
+    fun setPinSchedule(s: PinSchedule) = prefs.edit().putString(PIN_SCHEDULE, pinScheduleToJson(s).toString()).apply()
+
     /** Last address used for "Update TV over ADB" (host or host:port). */
     fun adbAddress(): String? = prefs.getString(ADB_ADDRESS, null)
     fun setAdbAddress(a: String) = prefs.edit().putString(ADB_ADDRESS, a).apply()
@@ -179,6 +187,7 @@ class RuleStore(ctx: Context) {
         private const val REMOTE_TOKEN = "remote_token"
         private const val REMOTE_NAME = "remote_name"
         private const val ADB_ADDRESS = "adb_address"
+        private const val PIN_SCHEDULE = "pin_schedule"
         private const val MAX_FAILS = 5
         const val LOCKOUT_MS = 30_000L
     }
@@ -208,6 +217,8 @@ fun ruleToJson(r: AppRule): JSONObject = JSONObject()
     .put("blocked", r.blocked)
     .put("unlimited", r.unlimited)
     .put("pin", r.pinLocked)
+    .put("pinFrom", r.pinFromMin)
+    .put("pinTo", r.pinToMin)
     .put("from", r.allowedFromMin)
     .put("to", r.allowedToMin)
     .put("breakEvery", r.breakEveryMin)
@@ -219,12 +230,41 @@ fun ruleFromJson(pkg: String, j: JSONObject): AppRule = AppRule(
     blocked = j.optBoolean("blocked", false),
     unlimited = j.optBoolean("unlimited", false),
     pinLocked = j.optBoolean("pin", false),
+    pinFromMin = j.optInt("pinFrom", -1),
+    pinToMin = j.optInt("pinTo", -1),
     allowedFromMin = j.optInt("from", -1),
     allowedToMin = j.optInt("to", -1),
     breakEveryMin = j.optInt("breakEvery", 0),
     breakForMin = j.optInt("breakFor", 0),
 )
 
-/** Any time rule cancels "unlimited", since the two contradict each other. */
-fun sanitizeRule(rule: AppRule): AppRule =
-    if (rule.unlimited && (rule.dailyLimitMin > 0 || rule.hasWindow || rule.hasBreaks)) rule.copy(unlimited = false) else rule
+fun pinScheduleToJson(s: PinSchedule): JSONObject = JSONObject()
+    .put("enabled", s.enabled)
+    .put("from", s.fromMin)
+    .put("to", s.toMin)
+    .put("allApps", s.allApps)
+    .put("pkgs", org.json.JSONArray(s.pkgs.sorted()))
+
+fun pinScheduleFromJson(j: JSONObject): PinSchedule {
+    val arr = j.optJSONArray("pkgs")
+    val pkgs = if (arr == null) emptySet() else (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { s -> s.isNotEmpty() } }.toSet()
+    fun minute(k: String, d: Int) = j.optInt(k, d).takeIf { it in 0 until 24 * 60 } ?: d
+    return PinSchedule(
+        enabled = j.optBoolean("enabled", false),
+        fromMin = minute("from", 21 * 60),
+        toMin = minute("to", 0),
+        allApps = j.optBoolean("allApps", true),
+        pkgs = pkgs,
+    )
+}
+
+/**
+ * Any time rule cancels "unlimited", since the two contradict each other.
+ * A PIN window only means something while the PIN lock is on.
+ */
+fun sanitizeRule(rule: AppRule): AppRule {
+    var r = rule
+    if (r.unlimited && (r.dailyLimitMin > 0 || r.hasWindow || r.hasBreaks)) r = r.copy(unlimited = false)
+    if (!r.pinLocked || !r.hasPinWindow) r = r.copy(pinFromMin = -1, pinToMin = -1)
+    return r
+}

@@ -36,13 +36,12 @@ class RuleEditor(
             update(if (rule.unlimited) rule.copy(unlimited = false)
                    else rule.copy(unlimited = true, dailyLimitMin = 0, allowedFromMin = -1, allowedToMin = -1, breakEveryMin = 0, breakForMin = 0))
         })
-        page.addView(setting("pin", a.getString(R.string.rule_pin), onOff(rule.pinLocked)) {
-            if (!rule.pinLocked && !hasPin()) {
-                createPin { update(current.copy(pinLocked = true)) }
-            } else {
-                update(rule.copy(pinLocked = !rule.pinLocked))
-            }
-        })
+        val pinValue = when {
+            !rule.pinLocked -> off()
+            rule.hasPinWindow -> formatClock(rule.pinFromMin) + " – " + formatClock(rule.pinToMin)
+            else -> a.getString(R.string.pin_always)
+        }
+        page.addView(setting("pin", a.getString(R.string.rule_pin), pinValue) { pickPin() })
     }
 
     /** A settings-style button; [value] empty means a plain action. */
@@ -84,6 +83,25 @@ class RuleEditor(
                 a.pickFrom(a.getString(R.string.allowed_from), labels) { f ->
                     a.pickFrom(a.getString(R.string.allowed_until), labels) { t ->
                         update(current.copy(allowedFromMin = slots[f], allowedToMin = slots[t]))
+                    }
+                }
+            }
+        }
+    }
+
+    /** PIN to open: off, always, or only between two times (e.g. 21:00 – 00:00). */
+    private fun pickPin() {
+        val slots = (0 until 48).map { it * 30 }
+        val labels = slots.map { formatClock(it) }
+        val choices = listOf(off(), a.getString(R.string.pin_always), a.getString(R.string.pin_between))
+        a.pickFrom(a.getString(R.string.rule_pin), choices) { choice ->
+            val apply: (AppRule) -> Unit = { r -> if (!hasPin()) createPin { update(r) } else update(r) }
+            when (choice) {
+                0 -> update(current.copy(pinLocked = false, pinFromMin = -1, pinToMin = -1))
+                1 -> apply(current.copy(pinLocked = true, pinFromMin = -1, pinToMin = -1))
+                else -> a.pickFrom(a.getString(R.string.pin_from), labels) { f ->
+                    a.pickFrom(a.getString(R.string.pin_until), labels) { t ->
+                        apply(current.copy(pinLocked = true, pinFromMin = slots[f], pinToMin = slots[t]))
                     }
                 }
             }

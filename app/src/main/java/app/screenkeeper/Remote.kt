@@ -41,6 +41,8 @@ import java.util.concurrent.Executors
  *   POST /override/{pkg}       {minutes}
  *   POST /launch/{pkg}
  *   POST /unpair
+ *   GET  /pinschedule                        {schedule:{enabled, from, to, allApps, pkgs}, hasPin}
+ *   PUT  /pinschedule          schedule json {schedule}
  *   GET  /history/{month|year}/{key}         usage statistics for a month (2026-11) or year (2026), see UsageHistory.summary
  *   GET  /keyboard                           {enabled, field:{text, hint, password, app}|null}
  *   POST /keyboard/text        {text}        {field}   replaces the focused field's text on the TV
@@ -271,6 +273,13 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
             r.method == "POST" && head == "override" && seg.size == 2 -> override(seg[1], json(r.body))
             r.method == "POST" && head == "launch" && seg.size == 2 -> ok().put("launched", Apps.launch(ctx, seg[1]))
             r.method == "POST" && head == "unpair" -> { store.removeToken(token); ok() }
+            r.method == "GET" && head == "pinschedule" -> pinScheduleJson()
+            r.method == "PUT" && head == "pinschedule" -> {
+                val s = pinScheduleFromJson(json(r.body))
+                if (s.enabled && !store.hasPin()) throw HttpError(400, "set a PIN first")
+                store.setPinSchedule(s)
+                pinScheduleJson()
+            }
             r.method == "GET" && head == "history" && seg.size >= 2 ->
                 UsageHistory(ctx).summary(seg[1], seg.getOrNull(2), withIcons = true)
             r.method == "GET" && head == "keyboard" && seg.size == 1 -> keyboardState()
@@ -399,6 +408,9 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
         store.setOverride(pkg, if (minutes == 0) 0L else System.currentTimeMillis() + minutes * Time.MINUTE)
         return ok()
     }
+
+    private fun pinScheduleJson(): JSONObject =
+        JSONObject().put("schedule", pinScheduleToJson(store.pinSchedule())).put("hasPin", store.hasPin())
 
     // ---- Phone keyboard ----
 

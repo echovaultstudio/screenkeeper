@@ -102,6 +102,10 @@
         </service>
 
         <activity
+            android:name=".PinScheduleActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".StatsActivity"
             android:exported="false" />
 

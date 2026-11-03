@@ -343,6 +343,6 @@ fun describeRule(r: AppRule?): String {
     if (r.dailyLimitMin > 0) parts += formatMinutes(r.dailyLimitMin) + "/day"
     if (r.hasWindow) parts += formatClock(r.allowedFromMin) + "–" + formatClock(r.allowedToMin)
     if (r.hasBreaks) parts += "Breaks"
-    if (r.pinLocked) parts += "PIN"
+    if (r.pinLocked) parts += if (r.hasPinWindow) "PIN " + formatClock(r.pinFromMin) + "–" + formatClock(r.pinToMin) else "PIN"
     return parts.joinToString(" · ")
 }
