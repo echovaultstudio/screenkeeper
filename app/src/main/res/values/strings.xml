@@ -92,7 +92,9 @@
     <string name="block_break_d">Stretch, grab some water, rest your eyes. Back in:</string>
     <string name="block_pin">PIN required</string>
     <string name="block_pin_d">Enter the PIN to open this app.</string>
-    <string name="block_pin_until">Enter the PIN to open this app. The PIN is needed until %1$s.</string>
+    <string name="block_pin_until">Enter the PIN to open this app. The PIN schedule asks for it until %1$s.</string>
+    <string name="block_pin_own_always">Enter the PIN to open this app. This app\'s own setting asks for the PIN at all times (its Rules → Require PIN to open), whatever the PIN schedule says.</string>
+    <string name="block_pin_own_until">Enter the PIN to open this app. This app\'s own PIN times ask for it until %1$s.</string>
 
     <!-- Phone remote -->
     <string name="remote_heading">Phone remote</string>
@@ -239,6 +241,14 @@
     <string name="pin_sched_active">On: %1$s need the PIN between %2$s.</string>
     <string name="pin_sched_inactive">Off. When on, the PIN is needed between %1$s.</string>
     <string name="pin_sched_summary_on">On, %1$s</string>
+    <plurals name="pin_sched_conflict_title">
+        <item quantity="one">%d app also has its own PIN setting</item>
+        <item quantity="other">%d apps also have their own PIN setting</item>
+    </plurals>
+    <string name="pin_sched_conflict_body">An app asks for the PIN when its own setting or the schedule says so — so these keep asking outside the schedule\'s hours.</string>
+    <string name="pin_sched_conflict_fix">Let the schedule decide for these apps</string>
+    <string name="pin_sched_own_always">own PIN: always</string>
+    <string name="pin_sched_own_window">own PIN: %1$s</string>
     <string name="pin_sched_old_tv">Screenkeeper on the TV is too old for the PIN schedule. Update it there (Update TV over ADB).</string>
 </resources>
 

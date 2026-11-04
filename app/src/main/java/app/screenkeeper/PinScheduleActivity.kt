@@ -23,6 +23,8 @@ class PinScheduleActivity : Activity() {
     private var schedule = PinSchedule()
     private var hasPin = false
     private var apps: List<Triple<String, String, Drawable?>> = emptyList() // pkg, label, icon
+    /** Each app's own rule, to spot apps whose own PIN setting asks outside the schedule. */
+    private var rules: Map<String, AppRule> = emptyMap()
     private var loaded = false
     private var focusTag: String? = null
     private lateinit var page: LinearLayout
@@ -61,19 +63,22 @@ class PinScheduleActivity : Activity() {
                 val s = r.get("/pinschedule")
                 val state = r.get("/state")
                 val arr = state.optJSONArray("apps")
-                val list = if (arr == null) emptyList() else (0 until arr.length()).map { arr.getJSONObject(it) }.map { a ->
+                val objs = if (arr == null) emptyList() else (0 until arr.length()).map { arr.getJSONObject(it) }
+                val list = objs.map { a ->
                     Triple(a.optString("pkg"), a.optString("label"), decodeIcon(this, a.optString("icon").takeIf { !a.isNull("icon") }))
                 }
-                Triple(pinScheduleFromJson(s.optJSONObject("schedule") ?: JSONObject()), s.optBoolean("hasPin"), list)
+                val rs = objs.mapNotNull { a -> a.optJSONObject("rule")?.let { a.optString("pkg") to ruleFromJson(a.optString("pkg"), it) } }.toMap()
+                Loaded(pinScheduleFromJson(s.optJSONObject("schedule") ?: JSONObject()), s.optBoolean("hasPin"), list, rs)
             } else {
                 val home = Apps.homePackages(this)
                 val list = Apps.launchable(this).filter { it.pkg != packageName && it.pkg !in home }.map { Triple(it.pkg, it.label, it.icon) }
-                Triple(store.pinSchedule(), store.hasPin(), list)
+                Loaded(store.pinSchedule(), store.hasPin(), list, store.allRules())
             }
-        }, ::showError) { (s, pin, list) ->
-            schedule = s
-            hasPin = pin
-            apps = list.sortedBy { it.second.lowercase() }
+        }, ::showError) { d ->
+            schedule = d.schedule
+            hasPin = d.hasPin
+            apps = d.apps.sortedBy { it.second.lowercase() }
+            rules = d.rules
             loaded = true
             render()
         }
@@ -93,6 +98,45 @@ class PinScheduleActivity : Activity() {
             render()
         }
     }
+
+    private class Loaded(
+        val schedule: PinSchedule,
+        val hasPin: Boolean,
+        val apps: List<Triple<String, String, Drawable?>>,
+        val rules: Map<String, AppRule>,
+    )
+
+    /** Apps whose own "Require PIN to open" also asks, so they can ask outside the schedule's hours. */
+    private fun ownPinApps(): List<Triple<String, String, Drawable?>> =
+        apps.filter { rules[it.first]?.pinLocked == true }
+
+    /**
+     * "Let the schedule decide": turn off these apps' own PIN setting and, when the schedule
+     * covers only ticked apps, tick them, so the schedule's hours alone decide when they ask.
+     */
+    private fun handOverToSchedule(list: List<Triple<String, String, Drawable?>>) {
+        val changed = list.mapNotNull { rules[it.first] }.map { sanitizeRule(it.copy(pinLocked = false, pinFromMin = -1, pinToMin = -1)) }
+        val newSchedule = if (schedule.allApps) schedule else schedule.copy(pkgs = schedule.pkgs + list.map { it.first })
+        val r = remote
+        if (r == null) {
+            changed.forEach { store.save(it) }
+            rules = store.allRules()
+            save(newSchedule)
+            return
+        }
+        io(bg, {
+            for (rule in changed) r.put("/rule/${rule.pkg}", ruleToJson(rule))
+            r.put("/pinschedule", pinScheduleToJson(newSchedule))
+        }, ::showError) { res ->
+            rules = rules.toMutableMap().apply { changed.forEach { c -> if (c.isDefault) remove(c.pkg) else put(c.pkg, c) } }
+            schedule = res.optJSONObject("schedule")?.let { pinScheduleFromJson(it) } ?: newSchedule
+            render()
+        }
+    }
+
+    private fun ownPinText(rule: AppRule): String =
+        if (rule.hasPinWindow) getString(R.string.pin_sched_own_window, formatClock(rule.pinFromMin) + "–" + formatClock(rule.pinToMin))
+        else getString(R.string.pin_sched_own_always)
 
     /** Turning the schedule on needs a PIN; make one first if there is none. */
     private fun withPin(then: () -> Unit) {
@@ -147,6 +191,25 @@ class PinScheduleActivity : Activity() {
         page.addView(buttonRow(from, until))
         page.addView(text(windowText(s), 13f, if (s.enabled) Palette.ACCENT else Palette.MUTED), lp(top = dp(6)))
 
+        // Apps with their own PIN setting ask whenever that setting says so, even outside the schedule.
+        val own = ownPinApps()
+        if (own.isNotEmpty()) {
+            val card = vbox().apply {
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(Palette.CARD); cornerRadius = dpf(14f); setStroke(dp(2), Palette.WARN)
+                }
+                setPadding(dp(16), dp(14), dp(16), dp(14))
+            }
+            card.addView(text(resources.getQuantityString(R.plurals.pin_sched_conflict_title, own.size, own.size), 16f, Palette.WARN, bold = true))
+            card.addView(text(getString(R.string.pin_sched_conflict_body), 14f), lp(top = dp(4)))
+            for ((pkg, label, _) in own.take(12)) {
+                card.addView(text("•  $label — " + ownPinText(rules.getValue(pkg)), 14f, Palette.MUTED), lp(top = dp(4)))
+            }
+            if (own.size > 12) card.addView(text("•  …", 14f, Palette.MUTED))
+            card.addView(settingButton("handover", getString(R.string.pin_sched_conflict_fix)) { handOverToSchedule(own) }, lp(top = dp(10)))
+            page.addView(card, lp(top = dp(14)))
+        }
+
         page.addView(text(getString(R.string.pin_sched_apps), 20f, bold = true), lp(top = dp(22), bottom = dp(8)))
         page.addView(tickRow("all", getString(R.string.pin_sched_all), getString(R.string.pin_sched_all_d), s.allApps, bold = true) {
             save(schedule.copy(allApps = !schedule.allApps))
@@ -158,7 +221,8 @@ class PinScheduleActivity : Activity() {
             page.addView(buttonRow(all, none), lp(bottom = dp(6)))
             page.addView(text(resources.getQuantityString(R.plurals.pin_sched_count, s.pkgs.size, s.pkgs.size), 13f, Palette.MUTED), lp(bottom = dp(8)))
             for ((pkg, label, icon) in apps) {
-                page.addView(tickRow("app:$pkg", label, null, pkg in s.pkgs, icon = icon) {
+                val ownRule = rules[pkg]?.takeIf { it.pinLocked }
+                page.addView(tickRow("app:$pkg", label, ownRule?.let { ownPinText(it) }, pkg in s.pkgs, icon = icon) {
                     val cur = schedule.pkgs
                     save(schedule.copy(pkgs = if (pkg in cur) cur - pkg else cur + pkg))
                 }, lp(bottom = dp(6)))

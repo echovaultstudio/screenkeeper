@@ -107,6 +107,7 @@ Updates keep the TV's rules and PIN as long as both APKs come from the same sign
 - Set a PIN first if kids use the device, then turn on rules. Settings re-lock 10 minutes after the PIN is entered (or press **Lock settings**).
 - **PIN times per app**: open an app → **Require PIN to open** → *Off*, *Always*, or *Only between certain times…* and pick the start and end (windows can cross midnight, e.g. 21:00–00:00).
 - **PIN schedule for many apps**: main screen → **PIN schedule** (on the phone: TV dashboard → **PIN schedule** for the TV). Tick *Use the PIN schedule*, set *From* and *Until*, then tick *All apps* or untick it and tick the apps you want. Changes save straight away. An app needs the PIN if either its own PIN times or the schedule say so; Screenkeeper and the home screen are never locked.
+  - An app whose own **Require PIN to open** is *Always* (every app locked before 1.4.0) keeps asking outside the schedule's hours. The schedule screen lists these apps; **Let the schedule decide for these apps** turns their own setting off (and ticks them if the schedule covers only ticked apps). The block screen also says which setting asked for the PIN.
 - When a rule triggers, a full-screen notice covers the app. **Go home** leaves; **Enter PIN** unlocks a PIN-locked app for that visit, or gives 15 more minutes for other blocks.
 
 ## Limits and ideas

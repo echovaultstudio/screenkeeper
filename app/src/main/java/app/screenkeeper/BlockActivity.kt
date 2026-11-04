@@ -95,8 +95,7 @@ class BlockActivity : Activity() {
             BlockReason.LIMIT_REACHED -> getString(R.string.block_limit) to
                 getString(R.string.block_limit_d, formatMinutes(rule.dailyLimitMin))
             BlockReason.ON_BREAK -> getString(R.string.block_break) to getString(R.string.block_break_d)
-            BlockReason.PIN_LOCKED -> getString(R.string.block_pin) to (pinUntil(rule)?.let { getString(R.string.block_pin_until, formatClock(it)) }
-                ?: getString(R.string.block_pin_d))
+            BlockReason.PIN_LOCKED -> getString(R.string.block_pin) to pinDetail(rule)
         }
         page.addView(text(headline, 22f, Palette.ACCENT, bold = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, top = dp(20)))
         page.addView(text(detail, 16f, Palette.MUTED).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, top = dp(6)))
@@ -118,14 +117,18 @@ class BlockActivity : Activity() {
         handler.post(ticker)
     }
 
-    /** End of the PIN window that applies right now, or null when the PIN is always needed. */
-    private fun pinUntil(rule: AppRule): Int? {
+    /** Says which setting asks for the PIN, so a schedule that "isn't working" is easy to explain. */
+    private fun pinDetail(rule: AppRule): String {
         val minute = Time.minuteOfDay(System.currentTimeMillis())
-        if (rule.pinLocked && !rule.hasPinWindow) return null
-        if (rule.pinLocked && Enforcer.inWindow(rule.pinFromMin, rule.pinToMin, minute)) return rule.pinToMin
+        if (rule.pinLocked && !rule.hasPinWindow) return getString(R.string.block_pin_own_always)
+        if (rule.pinLocked && Enforcer.inWindow(rule.pinFromMin, rule.pinToMin, minute)) {
+            return getString(R.string.block_pin_own_until, formatClock(rule.pinToMin))
+        }
         val s = store.pinSchedule()
-        if (s.enabled && s.covers(pkg) && s.fromMin != s.toMin && Enforcer.inWindow(s.fromMin, s.toMin, minute)) return s.toMin
-        return null
+        if (s.enabled && s.covers(pkg) && Enforcer.inWindow(s.fromMin, s.toMin, minute)) {
+            return if (s.fromMin == s.toMin) getString(R.string.block_pin_d) else getString(R.string.block_pin_until, formatClock(s.toMin))
+        }
+        return getString(R.string.block_pin_d)
     }
 
     private fun askPin() {
