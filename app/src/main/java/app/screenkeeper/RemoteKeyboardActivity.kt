@@ -29,6 +29,8 @@ class RemoteKeyboardActivity : Activity() {
     private lateinit var client: RemoteClient
     private lateinit var input: EditText
     private lateinit var status: TextView
+    private lateinit var fixButton: android.widget.Button
+    private var fixing = false
     private var tvName = ""
     private var suppress = false
 
@@ -78,6 +80,10 @@ class RemoteKeyboardActivity : Activity() {
         status = text(getString(R.string.keyboard_status_waiting), 13f, Palette.MUTED)
         page.addView(status, lp(top = dp(8)))
 
+        // Shown only when the TV's keyboard is off: switches it on over adb (the TV's Network debugging).
+        fixButton = button(getString(R.string.keyboard_fix)) { fixOverAdb() }.apply { visibility = android.view.View.GONE }
+        page.addView(fixButton, lp(WRAP, WRAP, top = dp(10)))
+
         val enter = button(getString(R.string.keyboard_enter)) { pressEnter() }
         page.addView(
             buttonRow(
@@ -111,7 +117,7 @@ class RemoteKeyboardActivity : Activity() {
         status.setTextColor(Palette.MUTED)
         io(bg, { client.get("/keyboard") }, ::showError) { res ->
             if (!res.optBoolean("enabled")) {
-                showProblem(getString(R.string.keyboard_not_enabled)); return@io
+                showKeyboardOff(); return@io
             }
             val field = res.optJSONObject("field")
             if (field == null) {
@@ -166,6 +172,41 @@ class RemoteKeyboardActivity : Activity() {
         status.setTextColor(Palette.ACCENT)
     }
 
+    private fun showKeyboardOff() {
+        showProblem(getString(R.string.keyboard_not_enabled_fix))
+        fixButton.visibility = android.view.View.VISIBLE
+    }
+
+    /** Switch the keyboard on on the TV over adb, then try again. */
+    private fun fixOverAdb() {
+        if (fixing) return
+        val addr = TvAdb.address(this) ?: run { showProblem(getString(R.string.adb_update_bad_address)); return }
+        fixing = true
+        fixButton.isEnabled = false
+        showProblem(getString(R.string.adb_update_connecting, "${addr.first}:${addr.second}"))
+        bg.execute {
+            val err = try {
+                AdbClient.connect(this, addr.first, addr.second) {
+                    runOnUiThread { showProblem(getString(R.string.adb_update_allow)) }
+                }.use { adb -> TvAdb.enableKeyboard(adb, packageName) }
+                null
+            } catch (e: Exception) {
+                e.message ?: e.javaClass.simpleName
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                fixing = false
+                fixButton.isEnabled = true
+                if (err != null) {
+                    showProblem(getString(R.string.keyboard_fix_failed, err))
+                } else {
+                    fixButton.visibility = android.view.View.GONE
+                    status.postDelayed({ if (!isFinishing) load() }, 1500)
+                }
+            }
+        }
+    }
+
     private fun showProblem(msg: String) {
         status.text = msg
         status.setTextColor(Palette.WARN)
@@ -178,7 +219,7 @@ class RemoteKeyboardActivity : Activity() {
                 e.status == 0 -> getString(R.string.remote_unreachable, saved?.host ?: "")
                 e.status == 401 -> getString(R.string.remote_unpaired)
                 e.status == 404 -> getString(R.string.keyboard_old_tv)
-                e.message == RemoteServer.KB_OFF -> getString(R.string.keyboard_not_enabled)
+                e.message == RemoteServer.KB_OFF -> { showKeyboardOff(); return }
                 e.message == RemoteServer.KB_NO_FIELD -> getString(R.string.keyboard_no_field)
                 e.message == RemoteServer.KB_FAILED -> getString(R.string.keyboard_failed)
                 else -> e.message ?: "Error ${e.status}"

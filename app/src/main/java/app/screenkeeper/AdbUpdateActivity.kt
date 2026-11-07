@@ -154,13 +154,7 @@ class AdbUpdateActivity : Activity() {
     private fun grantPermissions(adb: AdbClient): String {
         val pkg = packageName // same package id on phone and TV
         for (c in Perms.adbCommands(pkg).lines()) adb.shell(c.removePrefix("adb shell ").trim())
-        val kb = "$pkg/$pkg.KeyboardService"
-        val current = adb.shell("settings get secure enabled_accessibility_services").trim()
-        val list = current.split(':').filter { it.isNotBlank() && it != "null" }
-        if (list.none { it == kb || it == "$pkg/.KeyboardService" }) {
-            adb.shell("settings put secure enabled_accessibility_services " + (list + kb).joinToString(":"))
-        }
-        adb.shell("settings put secure accessibility_enabled 1")
+        TvAdb.enableKeyboard(adb, pkg)
         return getString(R.string.adb_update_granted)
     }
 

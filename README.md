@@ -89,6 +89,8 @@ Each pairing creates a random token that is stored on both devices; the code is 
 1. On the TV: Screenkeeper → **Phone remote** → **Phone keyboard** opens the accessibility settings; turn on **Screenkeeper phone keyboard** (on a Shield: *Settings → Device Preferences → Accessibility*). Or use **Grant permissions on TV** from the phone (below), which does it over adb.
 2. On the TV, select a search box or text field. On the phone: TV dashboard → **Keyboard** and type. Text appears on the TV as you type (backspace, autocorrect, paste and voice typing work), and a bubble at the top of the TV screen shows what's being typed. **Enter / Search** presses the TV keyboard's action key and clears the box on the phone, ready for the next search; the TV keeps what was sent.
 
+If the phone says the keyboard isn't running (an app update can switch it off), press **Fix from this phone** on the keyboard screen: it turns it back on over Network debugging and lets the TV switch it back on by itself after future updates and reboots. On the TV, the **Phone keyboard** button opens the Shield's own accessibility screen (the standard Android shortcut doesn't exist there, which showed "no app can do this").
+
 It works with regular Android text fields (Play Store, browsers, most login screens, Kodi, Plex…). Apps that draw their own letter grid instead of a real text field can't be typed into this way. The service only acts when a paired phone sends text.
 
 ### Update the TV from the phone (adb, no computer)

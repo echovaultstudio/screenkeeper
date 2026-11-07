@@ -153,6 +153,11 @@
     <string name="keyboard_failed">This app on the TV didn\'t accept the text. Some apps use their own on-screen keyboard that can\'t be typed into from outside.</string>
     <string name="keyboard_bubble">⌨  %1$s</string>
     <string name="keyboard_bubble_sent">⌨  ↵ Sent</string>
+    <string name="keyboard_not_enabled_fix">The keyboard isn\'t running on the TV (an app update can switch it off). Press Fix to turn it back on from this phone — it uses the TV\'s Network debugging, like Update TV over ADB.</string>
+    <string name="keyboard_fix">Fix from this phone</string>
+    <string name="keyboard_fix_failed">Couldn\'t fix it: %1$s\n\nCheck that Network debugging is on (TV: Settings → Device Preferences → Developer options), or on the TV open Screenkeeper → Phone keyboard.</string>
+    <string name="keyboard_tv_stuck">ticked but not running</string>
+    <string name="keyboard_tv_stuck_hint">Android ticked the keyboard but didn\'t start it, which can happen after an update. Press the button above, or use Fix from this phone in the phone\'s keyboard screen.</string>
     <string name="keyboard_old_tv">Screenkeeper on the TV is too old for the keyboard. Update it there.</string>
 
     <!-- Update the TV over adb, from the phone -->

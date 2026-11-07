@@ -34,6 +34,7 @@ class KeyboardService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        setWanted(this, true) // remember it was on, so it can be switched back on after an update
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -198,20 +199,95 @@ class KeyboardService : AccessibilityService() {
 
         private val main = Handler(Looper.getMainLooper())
 
-        /** Is the service turned on in the system's accessibility settings? */
-        fun isEnabled(ctx: Context): Boolean {
-            if (instance != null) return true
-            val list = Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        private const val PREFS = "screenkeeper_keyboard"
+        private const val WANTED = "wanted"
+
+        /** Running right now (bound by the system). */
+        fun isRunning(): Boolean = instance != null
+
+        /** Ticked in the system's accessibility settings (it may still not be running). */
+        fun isListed(ctx: Context): Boolean {
             val me = ComponentName(ctx, KeyboardService::class.java)
-            return list.split(':').any { ComponentName.unflattenFromString(it) == me }
+            return enabledList(ctx).any { ComponentName.unflattenFromString(it) == me }
         }
 
-        fun openSettings(ctx: Context): Boolean = tryStart(
-            ctx,
-            android.content.Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
-        )
+        fun isEnabled(ctx: Context): Boolean = isRunning() || isListed(ctx)
+
+        private fun enabledList(ctx: Context): List<String> =
+            (Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "")
+                .split(':').filter { it.isNotBlank() && it != "null" }
+
+        fun wanted(ctx: Context): Boolean = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(WANTED, false)
+        fun setWanted(ctx: Context, on: Boolean) =
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(WANTED, on).apply()
+
+        fun canSelfEnable(ctx: Context): Boolean =
+            ctx.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        /**
+         * Switch the service on by rewriting the accessibility setting: take it out, then put it back,
+         * which makes the system bind it again even when it was "ticked but not running" (what an app
+         * update can leave behind). Needs WRITE_SECURE_SETTINGS, granted over adb. Other services stay on.
+         */
+        fun selfEnable(ctx: Context): Boolean {
+            if (!canSelfEnable(ctx)) return false
+            return try {
+                val cr = ctx.contentResolver
+                val me = ComponentName(ctx, KeyboardService::class.java)
+                val others = enabledList(ctx).filter { ComponentName.unflattenFromString(it) != me }
+                Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, others.joinToString(":"))
+                Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, (others + me.flattenToString()).joinToString(":"))
+                Settings.Secure.putInt(cr, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
+                setWanted(ctx, true)
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        }
+
+        /** After boot or an update: if the keyboard was on before and isn't running now, switch it back on. */
+        fun heal(ctx: Context) {
+            if (isRunning() || !wanted(ctx)) return
+            selfEnable(ctx)
+        }
+
+        /**
+         * Open the accessibility settings. Android TV builds (the Shield among them) often have no
+         * handler for the standard shortcut, which shows "no app can do this", so try the TV
+         * settings app's own screens first and only start what actually exists.
+         */
+        fun openSettings(ctx: Context): Boolean {
+            val pm = ctx.packageManager
+            val tv = "com.android.tv.settings"
+            val candidates = listOf(
+                android.content.Intent().setClassName(tv, "$tv.accessibility.AccessibilityActivity"),
+                android.content.Intent().setClassName(tv, "$tv.accessibility.AccessibilityServicesActivity"),
+                android.content.Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
+                android.content.Intent().setClassName(tv, "$tv.MainSettings"),
+                android.content.Intent(Settings.ACTION_SETTINGS),
+            )
+            for (i in candidates) {
+                val info = pm.resolveActivity(i, 0)?.activityInfo ?: continue
+                if (!info.exported || info.packageName == "android") continue // the "no app can do this" resolver
+                if (tryStart(ctx, i)) return true
+            }
+            return false
+        }
+
+        /** Shell commands (no "adb shell" prefix) that switch the keyboard on and let the TV keep it on. */
+        fun enableShellCommands(pkg: String, current: String): List<String> {
+            val me = "$pkg/$pkg.KeyboardService"
+            val others = current.trim().split(':').filter { it.isNotBlank() && it != "null" && it != me && it != "$pkg/.KeyboardService" }
+            return listOf(
+                "pm grant $pkg android.permission.WRITE_SECURE_SETTINGS",
+                "settings put secure enabled_accessibility_services " + others.joinToString(":").ifEmpty { "\"\"" },
+                "settings put secure enabled_accessibility_services " + (others + me).joinToString(":"),
+                "settings put secure accessibility_enabled 1",
+            )
+        }
 
         fun adbCommands(pkg: String): String = """
+            adb shell pm grant $pkg android.permission.WRITE_SECURE_SETTINGS
             adb shell settings put secure enabled_accessibility_services $pkg/$pkg.KeyboardService
             adb shell settings put secure accessibility_enabled 1
         """.trimIndent()

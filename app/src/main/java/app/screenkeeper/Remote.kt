@@ -414,11 +414,24 @@ class RemoteServer(private val ctx: Context, private val store: RuleStore) {
 
     // ---- Phone keyboard ----
 
-    private fun keyboard(): KeyboardService =
-        KeyboardService.instance ?: throw HttpError(409, KB_OFF)
+    /** The running service, switching it back on first if it was dropped (e.g. by an update). */
+    private fun keyboardOrNull(): KeyboardService? {
+        KeyboardService.instance?.let { return it }
+        if (KeyboardService.wanted(ctx) || KeyboardService.isListed(ctx)) {
+            if (KeyboardService.selfEnable(ctx)) {
+                repeat(20) { Thread.sleep(100); KeyboardService.instance?.let { return it } }
+            }
+        }
+        return null
+    }
+
+    private fun keyboard(): KeyboardService = keyboardOrNull() ?: throw HttpError(409, KB_OFF)
 
     private fun keyboardState(): JSONObject {
-        val kb = KeyboardService.instance ?: return JSONObject().put("enabled", false).put("field", JSONObject.NULL)
+        val kb = keyboardOrNull() ?: return JSONObject().put("enabled", false)
+            .put("listed", KeyboardService.isListed(ctx))
+            .put("canSelfEnable", KeyboardService.canSelfEnable(ctx))
+            .put("field", JSONObject.NULL)
         val out = kb.current()
         return JSONObject().put("enabled", true)
             .put("field", if (out is KeyboardService.Outcome.Ok) fieldJson(out.field) else JSONObject.NULL)

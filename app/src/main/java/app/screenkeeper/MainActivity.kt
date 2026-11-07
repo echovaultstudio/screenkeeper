@@ -255,12 +255,18 @@ class MainActivity : Activity() {
 
     /** TV: the accessibility service that lets a paired phone type into this TV's text fields. */
     private fun addKeyboardRow(page: LinearLayout) {
-        val on = KeyboardService.isEnabled(this)
-        page.addView(button(getString(R.string.keyboard_tv_row) + ":  " + getString(if (on) R.string.on else R.string.off)) {
-            if (!KeyboardService.openSettings(this)) showKeyboardAdb()
+        KeyboardService.heal(this)
+        val running = KeyboardService.isRunning()
+        val listed = KeyboardService.isListed(this)
+        val state = getString(when { running -> R.string.on; listed -> R.string.keyboard_tv_stuck; else -> R.string.off })
+        page.addView(button(getString(R.string.keyboard_tv_row) + ":  " + state) {
+            when {
+                KeyboardService.selfEnable(this) -> page.postDelayed({ render() }, 1500)
+                !KeyboardService.openSettings(this) -> showKeyboardAdb()
+            }
         }, lp(WRAP, WRAP, top = dp(8), bottom = dp(4)))
-        if (!on) {
-            page.addView(text(getString(R.string.keyboard_tv_hint), 13f, Palette.MUTED))
+        if (!running) {
+            page.addView(text(getString(if (listed) R.string.keyboard_tv_stuck_hint else R.string.keyboard_tv_hint), 13f, Palette.MUTED))
             page.addView(button(getString(R.string.keyboard_tv_adb)) { showKeyboardAdb() }, lp(WRAP, WRAP, top = dp(6)))
         }
     }
