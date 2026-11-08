@@ -78,3 +78,42 @@ class PinScheduleTest {
         assertTrue(r.isDefault)
     }
 }
+
+class PinScheduleDaysTest {
+    private fun m(h: Int, min: Int = 0) = h * 60 + min
+    private val SUN = 1; private val MON = 2; private val FRI = 6; private val SAT = 7
+
+    @Test fun onlyTickedDays() {
+        val s = PinSchedule(enabled = true, fromMin = m(5), toMin = m(21), days = PinSchedule.WEEKDAYS)
+        assertTrue(s.activeAt(m(12), MON))
+        assertTrue(s.activeAt(m(12), FRI))
+        assertFalse(s.activeAt(m(12), SAT))
+        assertFalse(s.activeAt(m(12), SUN))
+        assertFalse(s.activeAt(m(22), MON))
+    }
+
+    @Test fun afterMidnightBelongsToTheStartDay() {
+        val s = PinSchedule(enabled = true, fromMin = m(21), toMin = m(2), days = setOf(FRI))
+        assertTrue(s.activeAt(m(23), FRI))
+        assertTrue(s.activeAt(m(1), SAT))   // Friday night, continued
+        assertFalse(s.activeAt(m(1), FRI))  // Thursday night: Thursday isn't ticked
+        assertFalse(s.activeAt(m(23), SAT))
+    }
+
+    @Test fun sundayToMondayWrap() {
+        val s = PinSchedule(enabled = true, fromMin = m(22), toMin = m(6), days = setOf(SUN))
+        assertTrue(s.activeAt(m(3), MON))
+        assertFalse(s.activeAt(m(3), SUN))
+    }
+
+    @Test fun noDaysNeverApplies() {
+        val s = PinSchedule(enabled = true, fromMin = m(0), toMin = m(0), days = emptySet())
+        assertFalse(Enforcer.pinRequired(null, s, "a", m(12), MON))
+    }
+
+    @Test fun pinRequiredUsesDays() {
+        val s = PinSchedule(enabled = true, fromMin = m(9), toMin = m(17), days = PinSchedule.WEEKEND)
+        assertTrue(Enforcer.pinRequired(null, s, "a", m(10), SAT))
+        assertFalse(Enforcer.pinRequired(null, s, "a", m(10), MON))
+    }
+}

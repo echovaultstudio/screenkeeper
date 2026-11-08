@@ -145,7 +145,7 @@ class GuardService : Service() {
         val rule = store.rule(fg)
         val minute = Time.minuteOfDay(now)
         val schedule = store.pinSchedule()
-        val schedulePin = store.hasPin() && Enforcer.pinRequired(null, schedule, fg, minute)
+        val schedulePin = store.hasPin() && Enforcer.pinRequired(null, schedule, fg, minute, Time.dayOfWeek(now))
         if (rule == null) {
             lastFg = fg
             if (schedulePin && GuardState.unlockedPkg != fg) launchBlock(fg, BlockReason.PIN_LOCKED, now)

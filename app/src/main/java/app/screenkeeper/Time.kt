@@ -20,6 +20,9 @@ object Time {
         return c.timeInMillis
     }
 
+    /** java.util.Calendar.DAY_OF_WEEK of [t] in local time (1 = Sunday … 7 = Saturday). */
+    fun dayOfWeek(t: Long): Int = Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.DAY_OF_WEEK)
+
     fun minuteOfDay(t: Long): Int {
         val c = Calendar.getInstance()
         c.timeInMillis = t

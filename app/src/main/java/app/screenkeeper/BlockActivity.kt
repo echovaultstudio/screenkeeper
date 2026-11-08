@@ -125,7 +125,7 @@ class BlockActivity : Activity() {
             return getString(R.string.block_pin_own_until, formatClock(rule.pinToMin))
         }
         val s = store.pinSchedule()
-        if (s.enabled && s.covers(pkg) && Enforcer.inWindow(s.fromMin, s.toMin, minute)) {
+        if (s.enabled && s.covers(pkg) && s.activeAt(minute, Time.dayOfWeek(System.currentTimeMillis()))) {
             return if (s.fromMin == s.toMin) getString(R.string.block_pin_d) else getString(R.string.block_pin_until, formatClock(s.toMin))
         }
         return getString(R.string.block_pin_d)

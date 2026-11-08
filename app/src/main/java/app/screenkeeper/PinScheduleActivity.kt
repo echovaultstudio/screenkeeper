@@ -189,7 +189,29 @@ class PinScheduleActivity : Activity() {
             pickFrom(getString(R.string.pin_until), labels) { save(schedule.copy(toMin = slots[it])) }
         }
         page.addView(buttonRow(from, until))
-        page.addView(text(windowText(s), 13f, if (s.enabled) Palette.ACCENT else Palette.MUTED), lp(top = dp(6)))
+
+        // Days of the week: one toggle per day, plus quick choices.
+        page.addView(text(getString(R.string.pin_sched_days), 14f, Palette.MUTED), lp(top = dp(14), bottom = dp(4)))
+        val dayButtons = weekOrder().map { d ->
+            val on = d in s.days
+            settingButton("day:$d", (if (on) "✓ " else "") + shortDayName(d)) {
+                val cur = schedule.days
+                save(schedule.copy(days = if (d in cur) cur - d else cur + d))
+            }.apply {
+                setTextColor(if (on) Palette.ACCENT else Palette.MUTED)
+                typeface = if (on) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
+            }
+        }
+        page.addView(buttonRow(*dayButtons.toTypedArray()))
+        val every = settingButton("days:all", getString(R.string.days_every)) { save(schedule.copy(days = PinSchedule.ALL_DAYS)) }
+        val weekdays = settingButton("days:weekdays", getString(R.string.days_weekdays)) { save(schedule.copy(days = PinSchedule.WEEKDAYS)) }
+        val weekend = settingButton("days:weekend", getString(R.string.days_weekend)) { save(schedule.copy(days = PinSchedule.WEEKEND)) }
+        page.addView(buttonRow(every, weekdays, weekend), lp(top = dp(6)))
+        if (s.fromMin > s.toMin && !s.days.containsAll(PinSchedule.ALL_DAYS)) {
+            page.addView(text(getString(R.string.pin_sched_days_midnight, formatClock(s.toMin)), 13f, Palette.MUTED), lp(top = dp(6)))
+        }
+
+        page.addView(text(windowText(s), 13f, if (s.enabled && s.days.isNotEmpty()) Palette.ACCENT else Palette.WARN.takeIf { s.enabled } ?: Palette.MUTED), lp(top = dp(10)))
 
         // Apps with their own PIN setting ask whenever that setting says so, even outside the schedule.
         val own = ownPinApps()
@@ -234,7 +256,9 @@ class PinScheduleActivity : Activity() {
     }
 
     private fun windowText(s: PinSchedule): String {
-        val window = formatClock(s.fromMin) + " – " + formatClock(s.toMin)
+        if (s.enabled && s.days.isEmpty()) return getString(R.string.pin_sched_no_days)
+        val window = formatClock(s.fromMin) + " – " + formatClock(s.toMin) +
+            if (s.days.containsAll(PinSchedule.ALL_DAYS)) "" else " (" + daysText(this, s.days) + ")"
         val who = if (s.allApps) getString(R.string.pin_sched_who_all)
                   else resources.getQuantityString(R.plurals.pin_sched_who_some, s.pkgs.size, s.pkgs.size)
         return if (s.enabled) getString(R.string.pin_sched_active, who, window) else getString(R.string.pin_sched_inactive, window)

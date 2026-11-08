@@ -13,10 +13,16 @@ object Enforcer {
         else -> minuteOfDay >= from || minuteOfDay < to
     }
 
-    /** Does opening [pkg] need the PIN right now, by its own rule or by the device-wide schedule? */
-    fun pinRequired(rule: AppRule?, schedule: PinSchedule?, pkg: String, minuteOfDay: Int): Boolean {
+    /**
+     * Does opening [pkg] need the PIN right now, by its own rule or by the device-wide schedule?
+     * [dayOfWeek] is a Calendar.DAY_OF_WEEK value; -1 ignores the schedule's days.
+     */
+    fun pinRequired(rule: AppRule?, schedule: PinSchedule?, pkg: String, minuteOfDay: Int, dayOfWeek: Int = -1): Boolean {
         if (rule != null && rule.pinLocked && (!rule.hasPinWindow || inWindow(rule.pinFromMin, rule.pinToMin, minuteOfDay))) return true
-        if (schedule != null && schedule.enabled && schedule.covers(pkg) && inWindow(schedule.fromMin, schedule.toMin, minuteOfDay)) return true
+        if (schedule != null && schedule.enabled && schedule.covers(pkg)) {
+            val on = if (dayOfWeek < 0) inWindow(schedule.fromMin, schedule.toMin, minuteOfDay) else schedule.activeAt(minuteOfDay, dayOfWeek)
+            if (on) return true
+        }
         return false
     }
 

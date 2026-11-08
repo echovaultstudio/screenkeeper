@@ -254,6 +254,13 @@
     <string name="pin_sched_conflict_fix">Let the schedule decide for these apps</string>
     <string name="pin_sched_own_always">own PIN: always</string>
     <string name="pin_sched_own_window">own PIN: %1$s</string>
+    <string name="pin_sched_days">Days</string>
+    <string name="pin_sched_days_midnight">Times after midnight count for the day before: with Friday ticked, the PIN is still needed on Saturday until %1$s.</string>
+    <string name="pin_sched_no_days">No days are ticked, so the schedule never asks for the PIN.</string>
+    <string name="days_every">Every day</string>
+    <string name="days_weekdays">Weekdays</string>
+    <string name="days_weekend">Weekends</string>
+    <string name="days_none">No days</string>
     <string name="pin_sched_old_tv">Screenkeeper on the TV is too old for the PIN schedule. Update it there (Update TV over ADB).</string>
 </resources>
 

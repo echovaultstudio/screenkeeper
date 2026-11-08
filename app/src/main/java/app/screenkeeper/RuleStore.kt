@@ -244,6 +244,7 @@ fun pinScheduleToJson(s: PinSchedule): JSONObject = JSONObject()
     .put("to", s.toMin)
     .put("allApps", s.allApps)
     .put("pkgs", org.json.JSONArray(s.pkgs.sorted()))
+    .put("days", org.json.JSONArray(s.days.sorted()))
 
 fun pinScheduleFromJson(j: JSONObject): PinSchedule {
     val arr = j.optJSONArray("pkgs")
@@ -255,6 +256,9 @@ fun pinScheduleFromJson(j: JSONObject): PinSchedule {
         toMin = minute("to", 0),
         allApps = j.optBoolean("allApps", true),
         pkgs = pkgs,
+        // Older versions had no days: every day.
+        days = j.optJSONArray("days")?.let { a -> (0 until a.length()).map { a.optInt(it) }.filter { it in 1..7 }.toSet() }
+            ?: PinSchedule.ALL_DAYS,
     )
 }
 

@@ -40,8 +40,27 @@ data class PinSchedule(
     val toMin: Int = 0,
     val allApps: Boolean = true,
     val pkgs: Set<String> = emptySet(),
+    /** Days it applies on, as java.util.Calendar.DAY_OF_WEEK values (1 = Sunday … 7 = Saturday). */
+    val days: Set<Int> = ALL_DAYS,
 ) {
     fun covers(pkg: String): Boolean = allApps || pkg in pkgs
+
+    /**
+     * Is the window on at [minuteOfDay] on [dayOfWeek]? A window that runs past midnight belongs to
+     * the day it starts: Friday 21:00–02:00 still applies at 01:00 on Saturday, and not on Friday 01:00.
+     */
+    fun activeAt(minuteOfDay: Int, dayOfWeek: Int): Boolean {
+        if (!Enforcer.inWindow(fromMin, toMin, minuteOfDay)) return false
+        if (days.containsAll(ALL_DAYS)) return true
+        val startDay = if (fromMin > toMin && minuteOfDay < toMin) (if (dayOfWeek == 1) 7 else dayOfWeek - 1) else dayOfWeek
+        return startDay in days
+    }
+
+    companion object {
+        val ALL_DAYS: Set<Int> = (1..7).toSet()
+        val WEEKDAYS: Set<Int> = (2..6).toSet() // Monday–Friday
+        val WEEKEND: Set<Int> = setOf(1, 7)
+    }
 }
 
 enum class BlockReason { BLOCKED, OUTSIDE_HOURS, LIMIT_REACHED, ON_BREAK, PIN_LOCKED }

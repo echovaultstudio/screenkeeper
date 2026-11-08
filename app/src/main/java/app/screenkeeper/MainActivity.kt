@@ -178,7 +178,8 @@ class MainActivity : Activity() {
         actions += button(getString(R.string.stats_open)) { startActivity(Intent(this, StatsActivity::class.java)) }
         val sched = store.pinSchedule()
         val schedLabel = getString(R.string.pin_sched_open) + ":  " +
-            if (sched.enabled && store.hasPin()) getString(R.string.pin_sched_summary_on, formatClock(sched.fromMin) + "–" + formatClock(sched.toMin))
+            if (sched.enabled && store.hasPin()) getString(R.string.pin_sched_summary_on, formatClock(sched.fromMin) + "–" + formatClock(sched.toMin) +
+                (if (sched.days.containsAll(PinSchedule.ALL_DAYS)) "" else ", " + daysText(this, sched.days)))
             else getString(R.string.off)
         actions += button(schedLabel) { startActivity(Intent(this, PinScheduleActivity::class.java)) }
         actions += button(getString(R.string.permissions)) { showSetup() }

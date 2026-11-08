@@ -335,6 +335,24 @@ class BarChartView(ctx: Context) : View(ctx) {
     }
 }
 
+/** The 7 days in the user's week order (Monday first in Finland), as Calendar.DAY_OF_WEEK values. */
+fun weekOrder(): List<Int> {
+    val first = java.util.Calendar.getInstance().firstDayOfWeek
+    return (0 until 7).map { (first - 1 + it) % 7 + 1 }
+}
+
+fun shortDayName(day: Int): String =
+    java.text.DateFormatSymbols.getInstance().shortWeekdays[day].replaceFirstChar { it.titlecase() }
+
+/** "Every day", "Weekdays", "Weekends", or "Mon, Wed, Fri". */
+fun daysText(ctx: Context, days: Set<Int>): String = when {
+    days.containsAll(PinSchedule.ALL_DAYS) -> ctx.getString(R.string.days_every)
+    days == PinSchedule.WEEKDAYS -> ctx.getString(R.string.days_weekdays)
+    days == PinSchedule.WEEKEND -> ctx.getString(R.string.days_weekend)
+    days.isEmpty() -> ctx.getString(R.string.days_none)
+    else -> weekOrder().filter { it in days }.joinToString(", ") { shortDayName(it) }
+}
+
 fun describeRule(r: AppRule?): String {
     if (r == null || r.isDefault) return ""
     val parts = ArrayList<String>()

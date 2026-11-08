@@ -16,8 +16,8 @@ android {
         applicationId = "app.screenkeeper"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.4.2"
+        versionCode = 10
+        versionName = "1.5.0"
     }
 
     signingConfigs {
